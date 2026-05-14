@@ -2,6 +2,18 @@
 
 一个纯前端、本地可用的 RoboMaster 工程兑矿 MARK 标注器。
 
+## 标注效果
+
+完整的标注界面效果，包含关键点、边线和标签的可视化：
+
+![标注效果](示例/image.png)
+
+各点命名及位置示意：
+
+![点命名图](点命名图.jpg)
+
+图中 `top_left`、`top_right`、`bottom_left`、`bottom_right` 为需要手工点击的 4 个蓝色灯条角点（anchor），其余点由模板通过单应矩阵自动投影生成。
+
 ## 现在支持的能力
 
 - 载入本地图片文件夹，逐张浏览
@@ -22,9 +34,31 @@
 
 方式 1：直接启动本地服务
 
+**macOS / Linux**
+
 ```bash
 cd /home/.../label-V2
 ./start-local.sh
+```
+
+**Windows（CMD）**
+
+```batch
+cd D:\...\label-V2
+start-local.bat
+```
+
+**Windows（PowerShell）**
+
+```powershell
+cd D:\...\label-V2
+.\start-local.ps1
+```
+
+如果系统限制执行 PowerShell 脚本，可先在当前窗口执行：
+
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
 ```
 
 启动后在浏览器里打开终端输出的地址，默认通常是：
