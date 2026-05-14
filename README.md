@@ -23,7 +23,7 @@
 方式 1：直接启动本地服务
 
 ```bash
-cd /home/aliouswe/label-V2
+cd /home/.../label-V2
 ./start-local.sh
 ```
 
@@ -52,26 +52,16 @@ http://127.0.0.1:8765
 
 ## 导出格式
 
-```json
-{
-  "id": "dataset/img_0001.png",
-  "imageName": "img_0001.png",
-  "imageWidth": 1280,
-  "imageHeight": 720,
-  "template": "RM 2026 MARK Split Points",
-  "complete": true,
-  "points": [
-    { "id": "top_left", "x": 421.231, "y": 152.004, "visibility": 2 }
-  ]
-}
-```
-
-批量导出时，最外层是一个数组。
-
 `TXT` 导出时，当前图会导出为单个 `*.txt`，全部导出会打包成一个 `zip`，其中每个图片对应一个同名 `txt` 标签文件。内容采用 YOLO Pose 的纯数字格式：
 
 ```text
 class cx cy w h x1 y1 v1 x2 y2 v2 ... x32 y32 v32
+```
+
+示例：
+
+```text
+0 0.421875 0.514583 0.183594 0.226389 0.329087 0.247311 2 0.361214 0.249802 2 ... 0.000000 0.000000 0
 ```
 
 说明：
@@ -81,6 +71,8 @@ class cx cy w h x1 y1 v1 x2 y2 v2 ... x32 y32 v32
 - 后面的关键点按模板顺序导出，坐标都已归一化到 `0 ~ 1`
 - `visibility` 保持 `0 / 1 / 2`
 - 当某个点 `visibility = 0` 时，会导出为 `0 0 0`
+- 单张导出时，文件名会和图片同名，只是扩展名改成 `.txt`
+- 全部导出时，会生成一个 `zip`，里面是每张图对应的标签文件
 
 ## 内置模板结构
 
