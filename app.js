@@ -39,47 +39,133 @@
     "bl_l_06",
   ]);
   const LEGACY_SPLIT_POINT_EDGE_COUNT = 25;
+  const LEGACY_BORDER_SPACE_FINGERPRINT = {
+    top_left: { x: 8, y: 8 },
+    top_right: { x: 72, y: 8 },
+    bottom_left: { x: 8, y: 72 },
+    bottom_right: { x: 72, y: 72 },
+    point_01: { x: 32.38, y: 8.41 },
+    point_10: { x: 65.69, y: 14.11 },
+    point_17: { x: 65.65, y: 31.74 },
+    point_28: { x: 47.73, y: 72.05 },
+  };
+  const INTEGER_DIMENSION_FINGERPRINT = {
+    top_left: { x: 8, y: 8 },
+    top_right: { x: 72, y: 8 },
+    bottom_left: { x: 8, y: 72 },
+    bottom_right: { x: 72, y: 72 },
+    point_01: { x: 30, y: 8 },
+    point_10: { x: 64, y: 16 },
+    point_17: { x: 50, y: 38 },
+    point_28: { x: 50, y: 72 },
+  };
+  const BORDER_FRAME_CENTERED_FINGERPRINT = {
+    top_left: { x: -40, y: 40 },
+    top_right: { x: 40, y: 40 },
+    bottom_left: { x: -40, y: -40 },
+    bottom_right: { x: 40, y: -40 },
+    point_01: { x: -7.62, y: 31.59 },
+  };
+  const VISIBLE_CORNER_APPROX_CENTERED_FINGERPRINT = {
+    top_left: { x: -32, y: 32 },
+    top_right: { x: 32, y: 32 },
+    bottom_left: { x: -32, y: -32 },
+    bottom_right: { x: 32, y: -32 },
+    point_01: { x: -7.62, y: 31.59 },
+    point_13: { x: 25.89, y: 14.19 },
+    point_28: { x: 7.73, y: -32.05 },
+  };
+  const TIGHTENED_VISIBLE_CORNER_CENTERED_FINGERPRINT = {
+    top_left: { x: -30, y: 30 },
+    top_right: { x: 30, y: 30 },
+    bottom_left: { x: -30, y: -30 },
+    bottom_right: { x: 30, y: -30 },
+    point_01: { x: -8, y: 30 },
+    point_13: { x: 24, y: 14 },
+    point_28: { x: 8, y: -30 },
+  };
+  const BUILTIN_TEMPLATE_MODEL_VERSION = "rm2026-visible-corner-centered-v3";
+  const PREVIOUS_BUILTIN_TEMPLATE_MODEL_VERSION = "rm2026-centered-80mm-v1";
+  const VISIBLE_CORNER_ANCHOR_MODEL = {
+    top_left: { x: 8, y: 8 },
+    top_right: { x: 72, y: 8 },
+    bottom_left: { x: 8, y: 72 },
+    bottom_right: { x: 72, y: 72 },
+  };
+  const BORDER_FRAME_ANCHOR_MODEL = {
+    top_left: { x: 0, y: 0 },
+    top_right: { x: 80, y: 0 },
+    bottom_left: { x: 0, y: 80 },
+    bottom_right: { x: 80, y: 80 },
+  };
 
-  const defaultTemplate = {
-    name: "RM 2026 MARK Split Points",
-    units: "mm",
-    anchorOrder: ["top_left", "top_right", "bottom_left", "bottom_right"],
-    points: [
-      { id: "top_left", label: "top_left", x: 8, y: 8, anchor: true },
-      { id: "top_right", label: "top_right", x: 72, y: 8, anchor: true },
-      { id: "bottom_left", label: "bottom_left", x: 8, y: 72, anchor: true },
-      { id: "bottom_right", label: "bottom_right", x: 72, y: 72, anchor: true },
+  const defaultTemplate = buildCenteredPhysicalTemplate();
 
-      { id: "point_01", label: "point_01", x: 32.38, y: 8.41 },
-      { id: "point_02", label: "point_02", x: 48.49, y: 8.39 },
-      { id: "point_03", label: "point_03", x: 54.56, y: 8.13 },
-      { id: "point_04", label: "point_04", x: 61.38, y: 8.17 },
-      { id: "point_05", label: "point_05", x: 15.5, y: 14.85 },
-      { id: "point_06", label: "point_06", x: 32.25, y: 14.39 },
-      { id: "point_07", label: "point_07", x: 48.2, y: 13.98 },
-      { id: "point_08", label: "point_08", x: 54.67, y: 13.91 },
-      { id: "point_09", label: "point_09", x: 61.14, y: 13.83 },
-      { id: "point_10", label: "point_10", x: 65.69, y: 14.11 },
-      { id: "point_11", label: "point_11", x: 66.08, y: 18.65 },
-      { id: "point_12", label: "point_12", x: 72.25, y: 18.32 },
-      { id: "point_13", label: "point_13", x: 65.89, y: 25.81 },
-      { id: "point_14", label: "point_14", x: 72.15, y: 25.4 },
-      { id: "point_15", label: "point_15", x: 8.85, y: 32.34 },
-      { id: "point_16", label: "point_16", x: 14.93, y: 32.19 },
-      { id: "point_17", label: "point_17", x: 65.65, y: 31.74 },
-      { id: "point_18", label: "point_18", x: 72.15, y: 31.57 },
-      { id: "point_19", label: "point_19", x: 8.58, y: 48.37 },
-      { id: "point_20", label: "point_20", x: 14.48, y: 48.34 },
-      { id: "point_21", label: "point_21", x: 65.7, y: 48.09 },
-      { id: "point_22", label: "point_22", x: 72.3, y: 48.11 },
-      { id: "point_23", label: "point_23", x: 14.46, y: 65.7 },
-      { id: "point_24", label: "point_24", x: 31.5, y: 65.79 },
-      { id: "point_25", label: "point_25", x: 47.73, y: 65.62 },
-      { id: "point_26", label: "point_26", x: 65.38, y: 65.48 },
-      { id: "point_27", label: "point_27", x: 31.64, y: 71.96 },
-      { id: "point_28", label: "point_28", x: 47.73, y: 72.05 },
-    ],
-    edges: [
+  function buildCenteredPhysicalTemplate() {
+    const lines = {
+      xOuterLeft: 8,
+      xInnerLeft: 14.8425,
+      xCenterLeft: 31.9425,
+      xCenterRight: 48.0375,
+      xSquareRightLeft: 54.615,
+      xTopRightLeft: 61.26,
+      xRightInner: 65.7317,
+      xOuterRight: 72,
+      yTop: 8,
+      yRow14: 14.1783,
+      yRow18: 18.485,
+      yRow26: 25.605,
+      yRow32: 31.96,
+      yRow48: 48.2275,
+      yRow66: 65.6475,
+      yBottom: 72,
+    };
+
+    const borderSpacePoints = [
+      // The 4 manual anchors remain the visible blue light-strip corners.
+      { id: "top_left", label: "top_left", x: lines.xOuterLeft, y: lines.yTop, anchor: true },
+      { id: "top_right", label: "top_right", x: lines.xOuterRight, y: lines.yTop, anchor: true },
+      { id: "bottom_left", label: "bottom_left", x: lines.xOuterLeft, y: lines.yBottom, anchor: true },
+      { id: "bottom_right", label: "bottom_right", x: lines.xOuterRight, y: lines.yBottom, anchor: true },
+
+      // The remaining points are rebuilt from shared x/y line families so that
+      // physically parallel strip edges stay collinear in the model plane.
+      { id: "point_01", label: "point_01", x: lines.xCenterLeft, y: lines.yTop },
+      { id: "point_02", label: "point_02", x: lines.xCenterRight, y: lines.yTop },
+      { id: "point_03", label: "point_03", x: lines.xSquareRightLeft, y: lines.yTop },
+      { id: "point_04", label: "point_04", x: lines.xTopRightLeft, y: lines.yTop },
+      { id: "point_05", label: "point_05", x: lines.xInnerLeft, y: lines.yRow14 },
+      { id: "point_06", label: "point_06", x: lines.xCenterLeft, y: lines.yRow14 },
+      { id: "point_07", label: "point_07", x: lines.xCenterRight, y: lines.yRow14 },
+      { id: "point_08", label: "point_08", x: lines.xSquareRightLeft, y: lines.yRow14 },
+      { id: "point_09", label: "point_09", x: lines.xTopRightLeft, y: lines.yRow14 },
+      { id: "point_10", label: "point_10", x: lines.xRightInner, y: lines.yRow14 },
+      { id: "point_11", label: "point_11", x: lines.xRightInner, y: lines.yRow18 },
+      { id: "point_12", label: "point_12", x: lines.xOuterRight, y: lines.yRow18 },
+      { id: "point_13", label: "point_13", x: lines.xRightInner, y: lines.yRow26 },
+      { id: "point_14", label: "point_14", x: lines.xOuterRight, y: lines.yRow26 },
+      { id: "point_15", label: "point_15", x: lines.xOuterLeft, y: lines.yRow32 },
+      { id: "point_16", label: "point_16", x: lines.xInnerLeft, y: lines.yRow32 },
+      { id: "point_17", label: "point_17", x: lines.xRightInner, y: lines.yRow32 },
+      { id: "point_18", label: "point_18", x: lines.xOuterRight, y: lines.yRow32 },
+      { id: "point_19", label: "point_19", x: lines.xOuterLeft, y: lines.yRow48 },
+      { id: "point_20", label: "point_20", x: lines.xInnerLeft, y: lines.yRow48 },
+      { id: "point_21", label: "point_21", x: lines.xRightInner, y: lines.yRow48 },
+      { id: "point_22", label: "point_22", x: lines.xOuterRight, y: lines.yRow48 },
+      { id: "point_23", label: "point_23", x: lines.xInnerLeft, y: lines.yRow66 },
+      { id: "point_24", label: "point_24", x: lines.xCenterLeft, y: lines.yRow66 },
+      { id: "point_25", label: "point_25", x: lines.xCenterRight, y: lines.yRow66 },
+      { id: "point_26", label: "point_26", x: lines.xRightInner, y: lines.yRow66 },
+      { id: "point_27", label: "point_27", x: lines.xCenterLeft, y: lines.yBottom },
+      { id: "point_28", label: "point_28", x: lines.xCenterRight, y: lines.yBottom },
+    ].map(toCenteredPhysicalPoint);
+
+    return {
+      name: "RM 2026 MARK Split Points",
+      units: "mm",
+      anchorOrder: ["top_left", "top_right", "bottom_left", "bottom_right"],
+      points: borderSpacePoints,
+      edges: [
       ["top_left", "point_01"],
       ["point_01", "point_06"],
       ["point_06", "point_05"],
@@ -117,8 +203,17 @@
       ["point_22", "bottom_right"],
       ["bottom_right", "point_28"],
       ["point_28", "point_25"],
-    ],
-  };
+      ],
+    };
+  }
+
+  function toCenteredPhysicalPoint(point) {
+    return {
+      ...point,
+      x: roundNumber(point.x - 40, 3),
+      y: roundNumber(40 - point.y, 3),
+    };
+  }
 
   const state = {
     template: normalizeTemplate(defaultTemplate),
@@ -635,29 +730,8 @@
 
   function projectCurrentPoints() {
     const annotation = getAnnotation();
-    const anchors = state.template.anchorOrder.map((id) => {
-      const templatePoint = state.template.pointMap[id];
-      const imagePoint = annotation.anchors[id];
-      if (!templatePoint || !imagePoint) {
-        return null;
-      }
-      return {
-        modelX: templatePoint.x,
-        modelY: templatePoint.y,
-        imageX: imagePoint.x,
-        imageY: imagePoint.y,
-      };
-    });
-
-    if (anchors.some((item) => !item)) {
-      return {
-        homography: null,
-        points: [],
-      };
-    }
-
-    const homography = solveHomography(anchors);
-    if (!homography) {
+    const projection = buildProjectedPointMapForAnnotation(annotation, currentImage());
+    if (!projection.homography) {
       return {
         homography: null,
         points: [],
@@ -665,23 +739,20 @@
     }
 
     const points = state.template.points.map((point) => {
-      const anchorPoint = annotation.anchors[point.id];
-      const projected = point.anchor && anchorPoint
-        ? { x: anchorPoint.x, y: anchorPoint.y }
-        : applyHomography(homography, point.x, point.y);
+      const projected = projection.pointMap.get(point.id);
       const visibility =
         annotation.visibility[point.id] !== undefined ? annotation.visibility[point.id] : 2;
       return {
         id: point.id,
         label: point.label || point.id,
-        x: projected.x,
-        y: projected.y,
+        x: projected ? projected.x : NaN,
+        y: projected ? projected.y : NaN,
         visibility,
         anchor: point.anchor,
       };
     });
 
-    return { homography, points };
+    return { homography: projection.homography, points };
   }
 
   function getAnchorDisplayPoints(annotation = getAnnotation()) {
@@ -970,6 +1041,8 @@
       imageWidth: image.naturalWidth || null,
       imageHeight: image.naturalHeight || null,
       template: state.template.name,
+      templateModel:
+        state.template.name === defaultTemplate.name ? BUILTIN_TEMPLATE_MODEL_VERSION : undefined,
       complete: isAnnotationConfirmed(annotation),
       points: state.template.points.map((point) => {
         const projectedPoint = projected.get(point.id);
@@ -1023,50 +1096,8 @@
       return partial;
     }
 
-    const anchors = state.template.anchorOrder.map((id) => {
-      const templatePoint = state.template.pointMap[id];
-      const imagePoint = annotation.anchors[id];
-      if (!templatePoint || !imagePoint) {
-        return null;
-      }
-      return {
-        modelX: templatePoint.x,
-        modelY: templatePoint.y,
-        imageX: imagePoint.x,
-        imageY: imagePoint.y,
-      };
-    });
-
-    if (anchors.some((item) => !item)) {
-      const partial = new Map();
-      for (const point of state.template.points) {
-        if (annotation.anchors[point.id]) {
-          partial.set(point.id, {
-            x: annotation.anchors[point.id].x,
-            y: annotation.anchors[point.id].y,
-          });
-        }
-      }
-      return partial;
-    }
-
-    const homography = solveHomography(anchors);
-    if (!homography) {
-      return new Map();
-    }
-
-    const result = new Map();
-    for (const point of state.template.points) {
-      if (point.anchor && annotation.anchors[point.id]) {
-        result.set(point.id, {
-          x: annotation.anchors[point.id].x,
-          y: annotation.anchors[point.id].y,
-        });
-        continue;
-      }
-      result.set(point.id, applyHomography(homography, point.x, point.y));
-    }
-    return result;
+    const image = state.images.find((item) => item.id === imageId) || null;
+    return buildProjectedPointMapForAnnotation(annotation, image).pointMap;
   }
 
   function mergeImportedAnnotations(payload) {
@@ -1094,6 +1125,9 @@
         ) {
           merged.anchors[point.id] = { x: point.x, y: point.y };
         }
+      }
+      if (shouldMigrateLegacyAnnotationRecord(record)) {
+        merged.anchors = migrateBorderFrameAnchorsToVisibleCorners(merged.anchors);
       }
       state.annotations[record.id] = merged;
     }
@@ -1165,10 +1199,536 @@
       points,
       pointMap,
       edges,
+      ...buildTemplateLineFamilies(points, edges, pointMap, anchorOrder),
+    };
+  }
+
+  function buildTemplateLineFamilies(points, edges, pointMap, anchorOrder) {
+    const anchorSet = new Set(anchorOrder);
+    const familyMap = new Map();
+    const pointFamilyMap = Object.create(null);
+    const tolerance = 1e-6;
+
+    const getFamilyKey = (axis, value) => `${axis}:${roundNumber(value, 4).toFixed(4)}`;
+    const ensureFamily = (axis, value) => {
+      const key = getFamilyKey(axis, value);
+      if (!familyMap.has(key)) {
+        familyMap.set(key, {
+          key,
+          axis,
+          modelValue: roundNumber(value, 4),
+          pointIds: [],
+          segments: [],
+          anchorIds: [],
+          locked: false,
+        });
+      }
+      return familyMap.get(key);
+    };
+
+    for (const point of points) {
+      pointFamilyMap[point.id] = Object.create(null);
+      for (const axis of ["x", "y"]) {
+        const family = ensureFamily(axis, point[axis]);
+        family.pointIds.push(point.id);
+        pointFamilyMap[point.id][axis] = family.key;
+        if (anchorSet.has(point.id)) {
+          family.anchorIds.push(point.id);
+        }
+      }
+    }
+
+    for (const [fromId, toId] of edges) {
+      const from = pointMap[fromId];
+      const to = pointMap[toId];
+      if (!from || !to) {
+        continue;
+      }
+      if (Math.abs(from.x - to.x) < tolerance) {
+        ensureFamily("x", (from.x + to.x) / 2).segments.push([fromId, toId]);
+      }
+      if (Math.abs(from.y - to.y) < tolerance) {
+        ensureFamily("y", (from.y + to.y) / 2).segments.push([fromId, toId]);
+      }
+    }
+
+    const lineFamilies = Array.from(familyMap.values()).map((family) => ({
+      ...family,
+      anchorIds: Array.from(new Set(family.anchorIds)),
+      locked: Array.from(new Set(family.anchorIds)).length >= 2,
+    }));
+
+    return {
+      lineFamilies,
+      pointFamilyMap,
+    };
+  }
+
+  function buildProjectedPointMapForAnnotation(annotation, image) {
+    const anchors = buildAnchorCorrespondences(annotation);
+    if (anchors.some((item) => !item)) {
+      return {
+        homography: null,
+        pointMap: buildPartialAnchorPointMap(annotation),
+      };
+    }
+
+    const homography = solveHomography(anchors);
+    if (!homography) {
+      return {
+        homography: null,
+        pointMap: new Map(),
+      };
+    }
+
+    const initialPointMap = buildInitialProjectedPointMap(annotation, homography);
+    return {
+      homography,
+      pointMap: refineProjectedPointMapWithImage(initialPointMap, image),
+    };
+  }
+
+  function buildAnchorCorrespondences(annotation) {
+    return state.template.anchorOrder.map((id) => {
+      const templatePoint = state.template.pointMap[id];
+      const imagePoint = annotation.anchors[id];
+      if (!templatePoint || !imagePoint) {
+        return null;
+      }
+      return {
+        modelX: templatePoint.x,
+        modelY: templatePoint.y,
+        imageX: imagePoint.x,
+        imageY: imagePoint.y,
+      };
+    });
+  }
+
+  function buildPartialAnchorPointMap(annotation) {
+    const partial = new Map();
+    for (const point of state.template.points) {
+      if (annotation.anchors[point.id]) {
+        partial.set(point.id, {
+          x: annotation.anchors[point.id].x,
+          y: annotation.anchors[point.id].y,
+        });
+      }
+    }
+    return partial;
+  }
+
+  function buildInitialProjectedPointMap(annotation, homography) {
+    const result = new Map();
+    for (const point of state.template.points) {
+      if (point.anchor && annotation.anchors[point.id]) {
+        result.set(point.id, {
+          x: annotation.anchors[point.id].x,
+          y: annotation.anchors[point.id].y,
+        });
+        continue;
+      }
+      result.set(point.id, applyHomography(homography, point.x, point.y));
+    }
+    return result;
+  }
+
+  function refineProjectedPointMapWithImage(initialPointMap, image) {
+    if (!image || !image.element || !image.naturalWidth || !image.naturalHeight) {
+      return initialPointMap;
+    }
+    if (!Array.isArray(state.template.lineFamilies) || !state.template.lineFamilies.length) {
+      return initialPointMap;
+    }
+
+    const analysis = getImageSignalAnalysis(image);
+    if (!analysis) {
+      return initialPointMap;
+    }
+
+    const familyLines = buildRefinedLineFamilies(initialPointMap, analysis);
+    if (!familyLines.size) {
+      return initialPointMap;
+    }
+
+    const refinedPointMap = new Map(initialPointMap);
+    for (const point of state.template.points) {
+      if (point.anchor) {
+        continue;
+      }
+      const pointFamilies = state.template.pointFamilyMap[point.id];
+      if (!pointFamilies) {
+        continue;
+      }
+      const xLine = familyLines.get(pointFamilies.x);
+      const yLine = familyLines.get(pointFamilies.y);
+      if (!xLine || !yLine) {
+        continue;
+      }
+      const intersection = intersectLines(xLine, yLine);
+      if (!intersection || !Number.isFinite(intersection.x) || !Number.isFinite(intersection.y)) {
+        continue;
+      }
+      refinedPointMap.set(point.id, intersection);
+    }
+    return refinedPointMap;
+  }
+
+  function buildRefinedLineFamilies(initialPointMap, analysis) {
+    const shiftLimits = buildFamilyShiftLimits(initialPointMap);
+    const familyLines = new Map();
+    for (const family of state.template.lineFamilies) {
+      const initialLine = buildInitialFamilyLine(family, initialPointMap);
+      if (!initialLine) {
+        continue;
+      }
+      if (family.locked || !family.segments.length) {
+        familyLines.set(family.key, initialLine);
+        continue;
+      }
+      const shift = estimateFamilyBoundaryShift(
+        family,
+        initialLine,
+        initialPointMap,
+        analysis,
+        shiftLimits.get(family.key)
+      );
+      familyLines.set(family.key, shift === null ? initialLine : shiftLine(initialLine, shift));
+    }
+    return familyLines;
+  }
+
+  function buildFamilyShiftLimits(initialPointMap) {
+    const groupedFamilies = {
+      x: [],
+      y: [],
+    };
+    for (const family of state.template.lineFamilies) {
+      groupedFamilies[family.axis].push(family);
+    }
+    groupedFamilies.x.sort((left, right) => left.modelValue - right.modelValue);
+    groupedFamilies.y.sort((left, right) => left.modelValue - right.modelValue);
+
+    const limits = new Map();
+    for (const axis of ["x", "y"]) {
+      const axisFamilies = groupedFamilies[axis];
+      for (let index = 0; index < axisFamilies.length; index += 1) {
+        const family = axisFamilies[index];
+        const adjacentGaps = [];
+        if (index > 0) {
+          const gapToPrev = estimateAdjacentFamilyGap(
+            family,
+            axisFamilies[index - 1],
+            initialPointMap
+          );
+          if (Number.isFinite(gapToPrev)) {
+            adjacentGaps.push(gapToPrev);
+          }
+        }
+        if (index + 1 < axisFamilies.length) {
+          const gapToNext = estimateAdjacentFamilyGap(
+            family,
+            axisFamilies[index + 1],
+            initialPointMap
+          );
+          if (Number.isFinite(gapToNext)) {
+            adjacentGaps.push(gapToNext);
+          }
+        }
+
+        if (!adjacentGaps.length) {
+          limits.set(family.key, 4);
+          continue;
+        }
+
+        const minGap = Math.min(...adjacentGaps);
+        limits.set(family.key, clamp(minGap * 0.3, 1.5, 6));
+      }
+    }
+    return limits;
+  }
+
+  function estimateAdjacentFamilyGap(family, adjacentFamily, initialPointMap) {
+    const familyCrossings = buildFamilyCrossingMap(family, initialPointMap);
+    const adjacentCrossings = buildFamilyCrossingMap(adjacentFamily, initialPointMap);
+    const distances = [];
+
+    for (const [crossKey, point] of familyCrossings.entries()) {
+      const adjacentPoint = adjacentCrossings.get(crossKey);
+      if (!adjacentPoint) {
+        continue;
+      }
+      distances.push(Math.hypot(adjacentPoint.x - point.x, adjacentPoint.y - point.y));
+    }
+
+    if (!distances.length) {
+      return null;
+    }
+
+    distances.sort((left, right) => left - right);
+    return distances[Math.floor(distances.length / 2)];
+  }
+
+  function buildFamilyCrossingMap(family, initialPointMap) {
+    const crossings = new Map();
+    for (const pointId of family.pointIds) {
+      const projected = initialPointMap.get(pointId);
+      if (!projected) {
+        continue;
+      }
+      const pointFamilies = state.template.pointFamilyMap[pointId];
+      if (!pointFamilies) {
+        continue;
+      }
+      const crossKey = family.axis === "x" ? pointFamilies.y : pointFamilies.x;
+      if (!crossKey) {
+        continue;
+      }
+      crossings.set(crossKey, projected);
+    }
+    return crossings;
+  }
+
+  function buildInitialFamilyLine(family, initialPointMap) {
+    const anchorPoints = family.anchorIds
+      .map((id) => initialPointMap.get(id))
+      .filter((point) => point && Number.isFinite(point.x) && Number.isFinite(point.y));
+    if (anchorPoints.length >= 2) {
+      const anchorLine = buildLineFromPoints(anchorPoints);
+      if (anchorLine) {
+        return anchorLine;
+      }
+    }
+
+    const projectedPoints = family.pointIds
+      .map((id) => initialPointMap.get(id))
+      .filter((point) => point && Number.isFinite(point.x) && Number.isFinite(point.y));
+    if (projectedPoints.length >= 2) {
+      return buildLineFromPoints(projectedPoints);
+    }
+
+    if (family.segments.length) {
+      const [fromId, toId] = family.segments[0];
+      const from = initialPointMap.get(fromId);
+      const to = initialPointMap.get(toId);
+      if (from && to) {
+        return buildLineFromPoints([from, to]);
+      }
+    }
+
+    return null;
+  }
+
+  function estimateFamilyBoundaryShift(family, line, initialPointMap, analysis, shiftLimit) {
+    const offsets = [];
+    const normal = { x: -line.dir.y, y: line.dir.x };
+    const searchRadius = clamp(shiftLimit ?? 4, 1.5, 10);
+
+    for (const [fromId, toId] of family.segments) {
+      const from = initialPointMap.get(fromId);
+      const to = initialPointMap.get(toId);
+      if (!from || !to) {
+        continue;
+      }
+      const segmentLength = Math.hypot(to.x - from.x, to.y - from.y);
+      const sampleCount = Math.max(3, Math.ceil(segmentLength / 12));
+      for (let index = 0; index < sampleCount; index += 1) {
+        const ratio = (index + 1) / (sampleCount + 1);
+        const sample = {
+          x: from.x + (to.x - from.x) * ratio,
+          y: from.y + (to.y - from.y) * ratio,
+        };
+        const best = findBestBoundaryOffset(sample, normal, analysis, searchRadius);
+        if (best) {
+          offsets.push(best);
+        }
+      }
+    }
+
+    if (offsets.length < 2) {
+      return null;
+    }
+
+    const sortedOffsets = offsets
+      .map((item) => item.offset)
+      .sort((left, right) => left - right);
+    return sortedOffsets[Math.floor(sortedOffsets.length / 2)];
+  }
+
+  function findBestBoundaryOffset(basePoint, normal, analysis, searchRadius) {
+    const gradientSpan = 1.5;
+    const step = 0.5;
+    let bestOffset = null;
+    let bestScore = -Infinity;
+
+    for (let offset = -searchRadius; offset <= searchRadius; offset += step) {
+      const prev = sampleSignal(
+        analysis,
+        basePoint.x + normal.x * (offset - gradientSpan),
+        basePoint.y + normal.y * (offset - gradientSpan)
+      );
+      const next = sampleSignal(
+        analysis,
+        basePoint.x + normal.x * (offset + gradientSpan),
+        basePoint.y + normal.y * (offset + gradientSpan)
+      );
+      if (prev === null || next === null) {
+        continue;
+      }
+      const gradient = Math.abs(next - prev);
+      const score = gradient - Math.abs(offset) * 2;
+      if (score > bestScore) {
+        bestScore = score;
+        bestOffset = offset;
+      }
+    }
+
+    if (bestOffset === null || bestScore < 18) {
+      return null;
+    }
+
+    return {
+      offset: bestOffset,
+      score: bestScore,
+    };
+  }
+
+  function getImageSignalAnalysis(image) {
+    if (!image || !image.element || !image.naturalWidth || !image.naturalHeight) {
+      return null;
+    }
+    if (image.signalAnalysis) {
+      return image.signalAnalysis;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    if (!context) {
+      return null;
+    }
+    context.drawImage(image.element, 0, 0, image.naturalWidth, image.naturalHeight);
+    const imageData = context.getImageData(0, 0, image.naturalWidth, image.naturalHeight);
+    const signal = new Float32Array(image.naturalWidth * image.naturalHeight);
+    for (let index = 0; index < signal.length; index += 1) {
+      const offset = index * 4;
+      const r = imageData.data[offset];
+      const g = imageData.data[offset + 1];
+      const b = imageData.data[offset + 2];
+      signal[index] = g + b - r * 0.6;
+    }
+
+    image.signalAnalysis = {
+      width: image.naturalWidth,
+      height: image.naturalHeight,
+      signal,
+    };
+    return image.signalAnalysis;
+  }
+
+  function sampleSignal(analysis, x, y) {
+    if (
+      !analysis ||
+      x < 1 ||
+      y < 1 ||
+      x > analysis.width - 2 ||
+      y > analysis.height - 2
+    ) {
+      return null;
+    }
+
+    const x0 = Math.floor(x);
+    const y0 = Math.floor(y);
+    const x1 = x0 + 1;
+    const y1 = y0 + 1;
+    const tx = x - x0;
+    const ty = y - y0;
+
+    const s00 = analysis.signal[y0 * analysis.width + x0];
+    const s10 = analysis.signal[y0 * analysis.width + x1];
+    const s01 = analysis.signal[y1 * analysis.width + x0];
+    const s11 = analysis.signal[y1 * analysis.width + x1];
+
+    const top = s00 * (1 - tx) + s10 * tx;
+    const bottom = s01 * (1 - tx) + s11 * tx;
+    return top * (1 - ty) + bottom * ty;
+  }
+
+  function buildLineFromPoints(points) {
+    if (!Array.isArray(points) || points.length < 2) {
+      return null;
+    }
+
+    let centerX = 0;
+    let centerY = 0;
+    for (const point of points) {
+      centerX += point.x;
+      centerY += point.y;
+    }
+    centerX /= points.length;
+    centerY /= points.length;
+
+    let covXX = 0;
+    let covXY = 0;
+    let covYY = 0;
+    for (const point of points) {
+      const dx = point.x - centerX;
+      const dy = point.y - centerY;
+      covXX += dx * dx;
+      covXY += dx * dy;
+      covYY += dy * dy;
+    }
+
+    const angle = 0.5 * Math.atan2(2 * covXY, covXX - covYY);
+    const dir = {
+      x: Math.cos(angle),
+      y: Math.sin(angle),
+    };
+    const magnitude = Math.hypot(dir.x, dir.y);
+    if (magnitude < 1e-9) {
+      return null;
+    }
+
+    return {
+      point: {
+        x: centerX,
+        y: centerY,
+      },
+      dir: {
+        x: dir.x / magnitude,
+        y: dir.y / magnitude,
+      },
+    };
+  }
+
+  function shiftLine(line, offset) {
+    return {
+      point: {
+        x: line.point.x - line.dir.y * offset,
+        y: line.point.y + line.dir.x * offset,
+      },
+      dir: { ...line.dir },
+    };
+  }
+
+  function intersectLines(lineA, lineB) {
+    const cross = lineA.dir.x * lineB.dir.y - lineA.dir.y * lineB.dir.x;
+    if (Math.abs(cross) < 1e-9) {
+      return null;
+    }
+
+    const dx = lineB.point.x - lineA.point.x;
+    const dy = lineB.point.y - lineA.point.y;
+    const t = (dx * lineB.dir.y - dy * lineB.dir.x) / cross;
+    return {
+      x: lineA.point.x + lineA.dir.x * t,
+      y: lineA.point.y + lineA.dir.y * t,
     };
   }
 
   function solveHomography(correspondences) {
+    // Equivalent to the DLT-style homography solve behind OpenCV's
+    // findHomography/getPerspectiveTransform for the 4-point planar case.
     const matrix = [];
     const values = [];
 
@@ -1337,11 +1897,14 @@
         return;
       }
       const saved = JSON.parse(raw);
+      const shouldMigrateSavedAnchors = templateRequiresLegacyAnchorMigration(saved.template);
       if (saved.template) {
         state.template = normalizeTemplate(upgradeLegacyDraftTemplate(saved.template));
       }
       if (saved.annotations && typeof saved.annotations === "object") {
-        state.annotations = saved.annotations;
+        state.annotations = shouldMigrateSavedAnchors
+          ? migrateAnnotationMap(saved.annotations)
+          : saved.annotations;
       }
       state.showLabels = saved.showLabels !== undefined ? Boolean(saved.showLabels) : true;
       state.showEdges = saved.showEdges !== undefined ? Boolean(saved.showEdges) : true;
@@ -1425,6 +1988,83 @@
     return filename.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]+/g, "_");
   }
 
+  function shouldMigrateLegacyAnnotationRecord(record) {
+    if (!record || typeof record !== "object") {
+      return false;
+    }
+    return record.templateModel === PREVIOUS_BUILTIN_TEMPLATE_MODEL_VERSION;
+  }
+
+  function migrateAnnotationMap(annotations) {
+    const migrated = {};
+    for (const [imageId, annotation] of Object.entries(annotations || {})) {
+      migrated[imageId] = {
+        ...annotation,
+        anchors: migrateBorderFrameAnchorsToVisibleCorners(annotation && annotation.anchors),
+      };
+    }
+    return migrated;
+  }
+
+  function migrateBorderFrameAnchorsToVisibleCorners(anchors) {
+    if (!anchors || typeof anchors !== "object") {
+      return anchors || {};
+    }
+    const anchorIds = ["top_left", "top_right", "bottom_left", "bottom_right"];
+    if (!anchorIds.every((id) => anchors[id] && Number.isFinite(anchors[id].x) && Number.isFinite(anchors[id].y))) {
+      return anchors;
+    }
+
+    const correspondences = anchorIds.map((id) => ({
+      modelX: BORDER_FRAME_ANCHOR_MODEL[id].x,
+      modelY: BORDER_FRAME_ANCHOR_MODEL[id].y,
+      imageX: anchors[id].x,
+      imageY: anchors[id].y,
+    }));
+    const homography = solveHomography(correspondences);
+    if (!homography) {
+      return anchors;
+    }
+
+    const migrated = { ...anchors };
+    for (const id of anchorIds) {
+      const projected = applyHomography(
+        homography,
+        VISIBLE_CORNER_ANCHOR_MODEL[id].x,
+        VISIBLE_CORNER_ANCHOR_MODEL[id].y
+      );
+      if (Number.isFinite(projected.x) && Number.isFinite(projected.y)) {
+        migrated[id] = {
+          x: roundNumber(projected.x, 3),
+          y: roundNumber(projected.y, 3),
+        };
+      }
+    }
+    return migrated;
+  }
+
+  function templateRequiresLegacyAnchorMigration(template) {
+    if (!template || typeof template !== "object") {
+      return false;
+    }
+
+    const points = Array.isArray(template.points) ? template.points : [];
+    const pointMap = Object.create(null);
+    for (const point of points) {
+      if (point && typeof point.id === "string") {
+        pointMap[point.id] = point;
+      }
+    }
+    return Object.entries(BORDER_FRAME_CENTERED_FINGERPRINT).every(([id, expected]) => {
+      const point = pointMap[id];
+      return (
+        point &&
+        Math.abs(point.x - expected.x) < 1e-6 &&
+        Math.abs(point.y - expected.y) < 1e-6
+      );
+    });
+  }
+
   function upgradeLegacyDraftTemplate(template) {
     if (!template || typeof template !== "object") {
       return template;
@@ -1455,11 +2095,45 @@
       pointIds.every((id) => defaultTemplate.points.some((point) => point.id === id));
     const hasLegacySplitPointEdges =
       Array.isArray(template.edges) && template.edges.length === LEGACY_SPLIT_POINT_EDGE_COUNT;
+    const builtInPointMap = Object.create(null);
+    for (const point of points) {
+      builtInPointMap[point.id] = point;
+    }
+    const matchesFingerprint = (fingerprint) =>
+      Object.entries(fingerprint).every(([id, expected]) => {
+        const point = builtInPointMap[id];
+        return (
+          point &&
+          Math.abs(point.x - expected.x) < 1e-6 &&
+          Math.abs(point.y - expected.y) < 1e-6
+        );
+      });
+    const hasLegacyBorderSpaceCoordinates = matchesFingerprint(LEGACY_BORDER_SPACE_FINGERPRINT);
+    const hasIntegerDimensionCoordinates = matchesFingerprint(INTEGER_DIMENSION_FINGERPRINT);
+    const hasBorderFrameCenteredCoordinates = matchesFingerprint(BORDER_FRAME_CENTERED_FINGERPRINT);
+    const hasVisibleCornerApproxCenteredCoordinates = matchesFingerprint(
+      VISIBLE_CORNER_APPROX_CENTERED_FINGERPRINT
+    );
+    const hasTightenedVisibleCornerCenteredCoordinates = matchesFingerprint(
+      TIGHTENED_VISIBLE_CORNER_CENTERED_FINGERPRINT
+    );
 
-    if (isBuiltInSplitPointTemplate && hasSamePointSetAsBuiltIn && hasLegacySplitPointEdges) {
+    if (
+      isBuiltInSplitPointTemplate &&
+      hasSamePointSetAsBuiltIn &&
+      (
+        hasLegacySplitPointEdges ||
+        hasLegacyBorderSpaceCoordinates ||
+        hasIntegerDimensionCoordinates ||
+        hasBorderFrameCenteredCoordinates ||
+        hasVisibleCornerApproxCenteredCoordinates ||
+        hasTightenedVisibleCornerCenteredCoordinates
+      )
+    ) {
       return {
         ...template,
         anchorOrder: defaultTemplate.anchorOrder.slice(),
+        points: defaultTemplate.points.map((point) => ({ ...point })),
         edges: defaultTemplate.edges.map((edge) => edge.slice()),
       };
     }
