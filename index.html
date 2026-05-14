@@ -12,7 +12,7 @@
         <section class="panel">
           <h1>RM MARK 标注工具</h1>
           <p class="panel-copy">
-            手动点四个外框角点，自动根据模板投影全部关键点，并为每个点维护
+            手动点发光图案的四个外角，自动根据模板投影全部关键点，并为每个点维护
             `x / y / visibility`。
           </p>
         </section>
@@ -50,7 +50,7 @@
         <section class="panel">
           <h2>标注状态</h2>
           <div id="anchorProgress" class="status-block">
-            按顺序点击四角：`top_left -> top_right -> bottom_left -> bottom_right`
+            按顺序点击发光外角：`top_left -> top_right -> bottom_left -> bottom_right`
           </div>
           <div class="row">
             <button id="confirmAnchorsButton" type="button">确认四角</button>
@@ -87,6 +87,13 @@
 
         <section class="panel">
           <h2>导出</h2>
+          <label class="field">
+            <span>导出格式</span>
+            <select id="exportFormatSelect">
+              <option value="json">JSON</option>
+              <option value="txt">TXT</option>
+            </select>
+          </label>
           <div class="row">
             <button id="exportCurrentButton" type="button">导出当前图</button>
             <button id="exportAllButton" type="button">导出全部</button>
@@ -101,7 +108,7 @@
           <h2>使用说明</h2>
           <ol class="instructions">
             <li>载入图片文件夹，选择一张图。</li>
-            <li>按 `top_left -> top_right -> bottom_left -> bottom_right` 点击四角。</li>
+            <li>按 `top_left -> top_right -> bottom_left -> bottom_right` 点击发光图案四个外角。</li>
             <li>点完四角后，点击“确认四角”，再生成其余自动点。</li>
             <li>点击任意点后，用按钮或键盘调整可见度。</li>
             <li>完成后导出 JSON。</li>

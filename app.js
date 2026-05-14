@@ -2,84 +2,121 @@
   "use strict";
 
   const STORAGE_KEY = "rm-mark-labeler-state-v1";
+  const EXPORT_FORMATS = {
+    JSON: "json",
+    TXT: "txt",
+  };
   const VISIBILITY_LABELS = {
     0: "不存在",
     1: "遮挡",
     2: "可见",
   };
   const LEGACY_DRAFT_ANCHOR_ORDER = ["top_left", "bottom_left", "bottom_right", "top_right"];
+  const LEGACY_DRAFT_POINT_IDS = new Set([
+    "tl_l_01",
+    "tl_l_02",
+    "tl_l_03",
+    "tl_l_04",
+    "tl_l_05",
+    "tl_l_06",
+    "tr_l_01",
+    "tr_l_02",
+    "tr_l_03",
+    "tr_l_04",
+    "tr_l_05",
+    "tr_l_06",
+    "br_l_01",
+    "br_l_02",
+    "br_l_03",
+    "br_l_04",
+    "br_l_05",
+    "br_l_06",
+    "bl_l_01",
+    "bl_l_02",
+    "bl_l_03",
+    "bl_l_04",
+    "bl_l_05",
+    "bl_l_06",
+  ]);
+  const LEGACY_SPLIT_POINT_EDGE_COUNT = 25;
 
   const defaultTemplate = {
-    name: "RM 2026 MARK Draft",
+    name: "RM 2026 MARK Split Points",
     units: "mm",
     anchorOrder: ["top_left", "top_right", "bottom_left", "bottom_right"],
     points: [
-      { id: "top_left", label: "top_left", x: 0, y: 0, anchor: true },
-      { id: "top_right", label: "top_right", x: 80, y: 0, anchor: true },
-      { id: "bottom_left", label: "bottom_left", x: 0, y: 80, anchor: true },
-      { id: "bottom_right", label: "bottom_right", x: 80, y: 80, anchor: true },
+      { id: "top_left", label: "top_left", x: 8, y: 8, anchor: true },
+      { id: "top_right", label: "top_right", x: 72, y: 8, anchor: true },
+      { id: "bottom_left", label: "bottom_left", x: 8, y: 72, anchor: true },
+      { id: "bottom_right", label: "bottom_right", x: 72, y: 72, anchor: true },
 
-      { id: "tl_l_01", label: "tl_l_01", x: 8, y: 8 },
-      { id: "tl_l_02", label: "tl_l_02", x: 30, y: 8 },
-      { id: "tl_l_03", label: "tl_l_03", x: 30, y: 16 },
-      { id: "tl_l_04", label: "tl_l_04", x: 16, y: 16 },
-      { id: "tl_l_05", label: "tl_l_05", x: 16, y: 30 },
-      { id: "tl_l_06", label: "tl_l_06", x: 8, y: 30 },
-
-      { id: "tr_l_01", label: "tr_l_01", x: 72, y: 8 },
-      { id: "tr_l_02", label: "tr_l_02", x: 50, y: 8 },
-      { id: "tr_l_03", label: "tr_l_03", x: 50, y: 16 },
-      { id: "tr_l_04", label: "tr_l_04", x: 64, y: 16 },
-      { id: "tr_l_05", label: "tr_l_05", x: 64, y: 30 },
-      { id: "tr_l_06", label: "tr_l_06", x: 72, y: 30 },
-
-      { id: "br_l_01", label: "br_l_01", x: 72, y: 72 },
-      { id: "br_l_02", label: "br_l_02", x: 50, y: 72 },
-      { id: "br_l_03", label: "br_l_03", x: 50, y: 64 },
-      { id: "br_l_04", label: "br_l_04", x: 64, y: 64 },
-      { id: "br_l_05", label: "br_l_05", x: 64, y: 50 },
-      { id: "br_l_06", label: "br_l_06", x: 72, y: 50 },
-
-      { id: "bl_l_01", label: "bl_l_01", x: 8, y: 72 },
-      { id: "bl_l_02", label: "bl_l_02", x: 30, y: 72 },
-      { id: "bl_l_03", label: "bl_l_03", x: 30, y: 64 },
-      { id: "bl_l_04", label: "bl_l_04", x: 16, y: 64 },
-      { id: "bl_l_05", label: "bl_l_05", x: 16, y: 50 },
-      { id: "bl_l_06", label: "bl_l_06", x: 8, y: 50 },
+      { id: "point_01", label: "point_01", x: 32.38, y: 8.41 },
+      { id: "point_02", label: "point_02", x: 48.49, y: 8.39 },
+      { id: "point_03", label: "point_03", x: 54.56, y: 8.13 },
+      { id: "point_04", label: "point_04", x: 61.38, y: 8.17 },
+      { id: "point_05", label: "point_05", x: 15.5, y: 14.85 },
+      { id: "point_06", label: "point_06", x: 32.25, y: 14.39 },
+      { id: "point_07", label: "point_07", x: 48.2, y: 13.98 },
+      { id: "point_08", label: "point_08", x: 54.67, y: 13.91 },
+      { id: "point_09", label: "point_09", x: 61.14, y: 13.83 },
+      { id: "point_10", label: "point_10", x: 65.69, y: 14.11 },
+      { id: "point_11", label: "point_11", x: 66.08, y: 18.65 },
+      { id: "point_12", label: "point_12", x: 72.25, y: 18.32 },
+      { id: "point_13", label: "point_13", x: 65.89, y: 25.81 },
+      { id: "point_14", label: "point_14", x: 72.15, y: 25.4 },
+      { id: "point_15", label: "point_15", x: 8.85, y: 32.34 },
+      { id: "point_16", label: "point_16", x: 14.93, y: 32.19 },
+      { id: "point_17", label: "point_17", x: 65.65, y: 31.74 },
+      { id: "point_18", label: "point_18", x: 72.15, y: 31.57 },
+      { id: "point_19", label: "point_19", x: 8.58, y: 48.37 },
+      { id: "point_20", label: "point_20", x: 14.48, y: 48.34 },
+      { id: "point_21", label: "point_21", x: 65.7, y: 48.09 },
+      { id: "point_22", label: "point_22", x: 72.3, y: 48.11 },
+      { id: "point_23", label: "point_23", x: 14.46, y: 65.7 },
+      { id: "point_24", label: "point_24", x: 31.5, y: 65.79 },
+      { id: "point_25", label: "point_25", x: 47.73, y: 65.62 },
+      { id: "point_26", label: "point_26", x: 65.38, y: 65.48 },
+      { id: "point_27", label: "point_27", x: 31.64, y: 71.96 },
+      { id: "point_28", label: "point_28", x: 47.73, y: 72.05 },
     ],
     edges: [
-      ["top_left", "bottom_left"],
-      ["bottom_left", "bottom_right"],
-      ["bottom_right", "top_right"],
-      ["top_right", "top_left"],
+      ["top_left", "point_01"],
+      ["point_01", "point_06"],
+      ["point_06", "point_05"],
+      ["point_05", "point_16"],
+      ["point_16", "point_15"],
+      ["point_15", "top_left"],
 
-      ["tl_l_01", "tl_l_02"],
-      ["tl_l_02", "tl_l_03"],
-      ["tl_l_03", "tl_l_04"],
-      ["tl_l_04", "tl_l_05"],
-      ["tl_l_05", "tl_l_06"],
-      ["tl_l_06", "tl_l_01"],
+      ["point_02", "point_03"],
+      ["point_03", "point_08"],
+      ["point_08", "point_07"],
+      ["point_07", "point_02"],
 
-      ["tr_l_01", "tr_l_02"],
-      ["tr_l_02", "tr_l_03"],
-      ["tr_l_03", "tr_l_04"],
-      ["tr_l_04", "tr_l_05"],
-      ["tr_l_05", "tr_l_06"],
-      ["tr_l_06", "tr_l_01"],
+      ["point_04", "top_right"],
+      ["top_right", "point_12"],
+      ["point_12", "point_11"],
+      ["point_11", "point_10"],
+      ["point_10", "point_09"],
+      ["point_09", "point_04"],
 
-      ["br_l_01", "br_l_02"],
-      ["br_l_02", "br_l_03"],
-      ["br_l_03", "br_l_04"],
-      ["br_l_04", "br_l_05"],
-      ["br_l_05", "br_l_06"],
-      ["br_l_06", "br_l_01"],
+      ["point_13", "point_14"],
+      ["point_14", "point_18"],
+      ["point_18", "point_17"],
+      ["point_17", "point_13"],
 
-      ["bl_l_01", "bl_l_02"],
-      ["bl_l_02", "bl_l_03"],
-      ["bl_l_03", "bl_l_04"],
-      ["bl_l_04", "bl_l_05"],
-      ["bl_l_05", "bl_l_06"],
-      ["bl_l_06", "bl_l_01"],
+      ["point_19", "point_20"],
+      ["point_20", "point_23"],
+      ["point_23", "point_24"],
+      ["point_24", "point_27"],
+      ["point_27", "bottom_left"],
+      ["bottom_left", "point_19"],
+
+      ["point_25", "point_26"],
+      ["point_26", "point_21"],
+      ["point_21", "point_22"],
+      ["point_22", "bottom_right"],
+      ["bottom_right", "point_28"],
+      ["point_28", "point_25"],
     ],
   };
 
@@ -91,6 +128,7 @@
     selectedPointId: null,
     showLabels: true,
     showEdges: true,
+    exportFormat: EXPORT_FORMATS.JSON,
     view: {
       scale: 1,
       offsetX: 0,
@@ -133,6 +171,7 @@
     visibility1Button: document.getElementById("visibility1Button"),
     visibility2Button: document.getElementById("visibility2Button"),
     pointList: document.getElementById("pointList"),
+    exportFormatSelect: document.getElementById("exportFormatSelect"),
     exportCurrentButton: document.getElementById("exportCurrentButton"),
     exportAllButton: document.getElementById("exportAllButton"),
     annotationInput: document.getElementById("annotationInput"),
@@ -180,6 +219,12 @@
       persistStateSoon();
       render();
     });
+    els.exportFormatSelect.addEventListener("change", () => {
+      const format = els.exportFormatSelect.value;
+      state.exportFormat =
+        format === EXPORT_FORMATS.TXT ? EXPORT_FORMATS.TXT : EXPORT_FORMATS.JSON;
+      persistStateSoon();
+    });
 
     els.visibility0Button.addEventListener("click", () => setSelectedPointVisibility(0));
     els.visibility1Button.addEventListener("click", () => setSelectedPointVisibility(1));
@@ -210,7 +255,7 @@
   }
 
   function handleKeydown(event) {
-    if (event.target && ["TEXTAREA", "INPUT"].includes(event.target.tagName)) {
+    if (event.target && ["TEXTAREA", "INPUT", "SELECT"].includes(event.target.tagName)) {
       return;
     }
 
@@ -899,12 +944,20 @@
     }
     await ensureImageLoaded(image);
     const payload = buildExportRecord(image);
+    if (state.exportFormat === EXPORT_FORMATS.TXT) {
+      downloadText(`${safeFileStem(image.name)}.annotation.txt`, buildTxtExportContent([payload]));
+      return;
+    }
     downloadJson(`${safeFileStem(image.name)}.annotation.json`, payload);
   }
 
   async function exportAllAnnotations() {
     await Promise.all(state.images.map((image) => ensureImageLoaded(image)));
     const payload = state.images.map((image) => buildExportRecord(image));
+    if (state.exportFormat === EXPORT_FORMATS.TXT) {
+      downloadText("rm-mark-annotations.txt", buildTxtExportContent(payload));
+      return;
+    }
     downloadJson("rm-mark-annotations.json", payload);
   }
 
@@ -928,6 +981,27 @@
         };
       }),
     };
+  }
+
+  function buildTxtExportContent(records) {
+    return records.map((record) => buildTxtExportLine(record)).join("\n") + "\n";
+  }
+
+  function buildTxtExportLine(record) {
+    const pointTokens = record.points.map((point) => {
+      const x = formatTxtNumber(point.x);
+      const y = formatTxtNumber(point.y);
+      const visibility = typeof point.visibility === "number" ? point.visibility : 2;
+      return `${point.id}(${x},${y},${visibility})`;
+    });
+    return [record.id, ...pointTokens].join(" ");
+  }
+
+  function formatTxtNumber(value) {
+    if (!Number.isFinite(value)) {
+      return "null";
+    }
+    return String(roundNumber(value, 3));
   }
 
   function buildProjectedPointsForImage(imageId) {
@@ -1252,6 +1326,7 @@
     );
     els.showLabelsCheckbox.checked = state.showLabels;
     els.showEdgesCheckbox.checked = state.showEdges;
+    els.exportFormatSelect.value = state.exportFormat;
   }
 
   function hydrateFromStorage() {
@@ -1270,6 +1345,8 @@
       }
       state.showLabels = saved.showLabels !== undefined ? Boolean(saved.showLabels) : true;
       state.showEdges = saved.showEdges !== undefined ? Boolean(saved.showEdges) : true;
+      state.exportFormat =
+        saved.exportFormat === EXPORT_FORMATS.TXT ? EXPORT_FORMATS.TXT : EXPORT_FORMATS.JSON;
     } catch (error) {
       console.warn("Failed to hydrate state", error);
     }
@@ -1293,12 +1370,22 @@
       annotations: state.annotations,
       showLabels: state.showLabels,
       showEdges: state.showEdges,
+      exportFormat: state.exportFormat,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   }
 
   function downloadJson(filename, data) {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    downloadBlob(filename, blob);
+  }
+
+  function downloadText(filename, text) {
+    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+    downloadBlob(filename, blob);
+  }
+
+  function downloadBlob(filename, blob) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -1342,15 +1429,41 @@
     if (!template || typeof template !== "object") {
       return template;
     }
-    if (template.name !== defaultTemplate.name || !Array.isArray(template.anchorOrder)) {
-      return template;
+    const points = Array.isArray(template.points) ? template.points : [];
+    const pointIds = points
+      .map((point) => (point && typeof point.id === "string" ? point.id : null))
+      .filter(Boolean);
+
+    const hasLegacyDraftPoints = pointIds.some((id) => LEGACY_DRAFT_POINT_IDS.has(id));
+    if (hasLegacyDraftPoints) {
+      return defaultTemplate;
     }
-    if (template.anchorOrder.join("|") !== LEGACY_DRAFT_ANCHOR_ORDER.join("|")) {
-      return template;
+
+    if (
+      Array.isArray(template.anchorOrder) &&
+      template.anchorOrder.join("|") === LEGACY_DRAFT_ANCHOR_ORDER.join("|")
+    ) {
+      return {
+        ...template,
+        anchorOrder: defaultTemplate.anchorOrder.slice(),
+      };
     }
-    return {
-      ...template,
-      anchorOrder: defaultTemplate.anchorOrder.slice(),
-    };
+
+    const isBuiltInSplitPointTemplate = template.name === defaultTemplate.name;
+    const hasSamePointSetAsBuiltIn =
+      pointIds.length === defaultTemplate.points.length &&
+      pointIds.every((id) => defaultTemplate.points.some((point) => point.id === id));
+    const hasLegacySplitPointEdges =
+      Array.isArray(template.edges) && template.edges.length === LEGACY_SPLIT_POINT_EDGE_COUNT;
+
+    if (isBuiltInSplitPointTemplate && hasSamePointSetAsBuiltIn && hasLegacySplitPointEdges) {
+      return {
+        ...template,
+        anchorOrder: defaultTemplate.anchorOrder.slice(),
+        edges: defaultTemplate.edges.map((edge) => edge.slice()),
+      };
+    }
+
+    return template;
   }
 })();
