@@ -1121,11 +1121,22 @@
       complete: isAnnotationConfirmed(annotation),
       pointAdjustments: serializePointAdjustments(annotation.pointAdjustments),
       points: state.template.points.map((point) => {
-        const projectedPoint = projected.get(point.id);
+        let x = null;
+        let y = null;
+        if (point.anchor && annotation.anchors[point.id]) {
+          x = roundNumber(annotation.anchors[point.id].x, 3);
+          y = roundNumber(annotation.anchors[point.id].y, 3);
+        } else {
+          const projectedPoint = projected.get(point.id);
+          if (projectedPoint) {
+            x = roundNumber(projectedPoint.x, 3);
+            y = roundNumber(projectedPoint.y, 3);
+          }
+        }
         return {
           id: point.id,
-          x: projectedPoint ? roundNumber(projectedPoint.x, 3) : null,
-          y: projectedPoint ? roundNumber(projectedPoint.y, 3) : null,
+          x,
+          y,
           visibility: annotation.visibility[point.id] !== undefined ? annotation.visibility[point.id] : 2,
         };
       }),
@@ -1137,14 +1148,7 @@
   }
 
   function buildTxtExportLine(record) {
-    const bbox = buildYoloBoundingBox(record);
-    const tokens = [
-      String(YOLO_CLASS_ID),
-      formatYoloNumber(bbox.cx),
-      formatYoloNumber(bbox.cy),
-      formatYoloNumber(bbox.width),
-      formatYoloNumber(bbox.height),
-    ];
+    const tokens = [String(YOLO_CLASS_ID)];
 
     for (const point of record.points) {
       const visibility =
@@ -1170,51 +1174,6 @@
     }
 
     return tokens.join(" ");
-  }
-
-  function buildYoloBoundingBox(record) {
-    if (
-      !Number.isFinite(record.imageWidth) ||
-      !Number.isFinite(record.imageHeight) ||
-      record.imageWidth <= 0 ||
-      record.imageHeight <= 0
-    ) {
-      return {
-        cx: 0,
-        cy: 0,
-        width: 0,
-        height: 0,
-      };
-    }
-
-    const validPoints = record.points.filter(
-      (point) =>
-        Number.isFinite(point.x) &&
-        Number.isFinite(point.y) &&
-        (typeof point.visibility !== "number" || point.visibility > 0)
-    );
-    if (!validPoints.length) {
-      return {
-        cx: 0,
-        cy: 0,
-        width: 0,
-        height: 0,
-      };
-    }
-
-    const xs = validPoints.map((point) => point.x);
-    const ys = validPoints.map((point) => point.y);
-    const minX = Math.min(...xs);
-    const maxX = Math.max(...xs);
-    const minY = Math.min(...ys);
-    const maxY = Math.max(...ys);
-
-    return {
-      cx: normalizeYoloValue((minX + maxX) / 2, record.imageWidth),
-      cy: normalizeYoloValue((minY + maxY) / 2, record.imageHeight),
-      width: normalizeYoloValue(maxX - minX, record.imageWidth),
-      height: normalizeYoloValue(maxY - minY, record.imageHeight),
-    };
   }
 
   function normalizeYoloValue(value, size) {
