@@ -1,0 +1,73 @@
+{
+  "name": "RM 2026 MARK Draft",
+  "units": "mm",
+  "anchorOrder": ["top_left", "top_right", "bottom_left", "bottom_right"],
+  "points": [
+    { "id": "top_left", "label": "top_left", "x": 0, "y": 0, "anchor": true },
+    { "id": "top_right", "label": "top_right", "x": 80, "y": 0, "anchor": true },
+    { "id": "bottom_left", "label": "bottom_left", "x": 0, "y": 80, "anchor": true },
+    { "id": "bottom_right", "label": "bottom_right", "x": 80, "y": 80, "anchor": true },
+
+    { "id": "tl_l_01", "label": "tl_l_01", "x": 8, "y": 8 },
+    { "id": "tl_l_02", "label": "tl_l_02", "x": 30, "y": 8 },
+    { "id": "tl_l_03", "label": "tl_l_03", "x": 30, "y": 16 },
+    { "id": "tl_l_04", "label": "tl_l_04", "x": 16, "y": 16 },
+    { "id": "tl_l_05", "label": "tl_l_05", "x": 16, "y": 30 },
+    { "id": "tl_l_06", "label": "tl_l_06", "x": 8, "y": 30 },
+
+    { "id": "tr_l_01", "label": "tr_l_01", "x": 72, "y": 8 },
+    { "id": "tr_l_02", "label": "tr_l_02", "x": 50, "y": 8 },
+    { "id": "tr_l_03", "label": "tr_l_03", "x": 50, "y": 16 },
+    { "id": "tr_l_04", "label": "tr_l_04", "x": 64, "y": 16 },
+    { "id": "tr_l_05", "label": "tr_l_05", "x": 64, "y": 30 },
+    { "id": "tr_l_06", "label": "tr_l_06", "x": 72, "y": 30 },
+
+    { "id": "br_l_01", "label": "br_l_01", "x": 72, "y": 72 },
+    { "id": "br_l_02", "label": "br_l_02", "x": 50, "y": 72 },
+    { "id": "br_l_03", "label": "br_l_03", "x": 50, "y": 64 },
+    { "id": "br_l_04", "label": "br_l_04", "x": 64, "y": 64 },
+    { "id": "br_l_05", "label": "br_l_05", "x": 64, "y": 50 },
+    { "id": "br_l_06", "label": "br_l_06", "x": 72, "y": 50 },
+
+    { "id": "bl_l_01", "label": "bl_l_01", "x": 8, "y": 72 },
+    { "id": "bl_l_02", "label": "bl_l_02", "x": 30, "y": 72 },
+    { "id": "bl_l_03", "label": "bl_l_03", "x": 30, "y": 64 },
+    { "id": "bl_l_04", "label": "bl_l_04", "x": 16, "y": 64 },
+    { "id": "bl_l_05", "label": "bl_l_05", "x": 16, "y": 50 },
+    { "id": "bl_l_06", "label": "bl_l_06", "x": 8, "y": 50 }
+  ],
+  "edges": [
+    ["top_left", "bottom_left"],
+    ["bottom_left", "bottom_right"],
+    ["bottom_right", "top_right"],
+    ["top_right", "top_left"],
+
+    ["tl_l_01", "tl_l_02"],
+    ["tl_l_02", "tl_l_03"],
+    ["tl_l_03", "tl_l_04"],
+    ["tl_l_04", "tl_l_05"],
+    ["tl_l_05", "tl_l_06"],
+    ["tl_l_06", "tl_l_01"],
+
+    ["tr_l_01", "tr_l_02"],
+    ["tr_l_02", "tr_l_03"],
+    ["tr_l_03", "tr_l_04"],
+    ["tr_l_04", "tr_l_05"],
+    ["tr_l_05", "tr_l_06"],
+    ["tr_l_06", "tr_l_01"],
+
+    ["br_l_01", "br_l_02"],
+    ["br_l_02", "br_l_03"],
+    ["br_l_03", "br_l_04"],
+    ["br_l_04", "br_l_05"],
+    ["br_l_05", "br_l_06"],
+    ["br_l_06", "br_l_01"],
+
+    ["bl_l_01", "bl_l_02"],
+    ["bl_l_02", "bl_l_03"],
+    ["bl_l_03", "bl_l_04"],
+    ["bl_l_04", "bl_l_05"],
+    ["bl_l_05", "bl_l_06"],
+    ["bl_l_06", "bl_l_01"]
+  ]
+}

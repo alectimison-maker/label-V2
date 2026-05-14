@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RM MARK 标注工具</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <section class="panel">
+          <h1>RM MARK 标注工具</h1>
+          <p class="panel-copy">
+            手动点四个外框角点，自动根据模板投影全部关键点，并为每个点维护
+            `x / y / visibility`。
+          </p>
+        </section>
+
+        <section class="panel">
+          <h2>数据集</h2>
+          <label class="field">
+            <span>载入图片文件夹</span>
+            <input id="imageFolderInput" type="file" accept="image/*" webkitdirectory multiple />
+          </label>
+          <div class="row">
+            <button id="prevImageButton" type="button">上一张 (A)</button>
+            <button id="nextImageButton" type="button">下一张 (D)</button>
+          </div>
+          <div id="datasetSummary" class="status-block">还没有载入图片。</div>
+        </section>
+
+        <section class="panel">
+          <h2>模板</h2>
+          <div id="templateSummary" class="status-block"></div>
+          <label class="field">
+            <span>导入模板 JSON</span>
+            <input id="templateInput" type="file" accept=".json,application/json" />
+          </label>
+          <div class="row">
+            <button id="restoreTemplateButton" type="button">恢复内置模板</button>
+            <button id="toggleTemplateEditorButton" type="button">编辑模板 JSON</button>
+          </div>
+          <div id="templateEditorWrap" class="template-editor hidden">
+            <textarea id="templateEditor" spellcheck="false"></textarea>
+            <button id="applyTemplateButton" type="button">应用模板</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>标注状态</h2>
+          <div id="anchorProgress" class="status-block">
+            按顺序点击四角：`top_left -> top_right -> bottom_left -> bottom_right`
+          </div>
+          <div class="row">
+            <button id="confirmAnchorsButton" type="button">确认四角</button>
+            <button id="resetCurrentButton" type="button">重置当前图</button>
+            <button id="fitViewButton" type="button">适配视图</button>
+          </div>
+          <div class="row">
+            <label class="checkbox">
+              <input id="showLabelsCheckbox" type="checkbox" checked />
+              <span>显示标签</span>
+            </label>
+            <label class="checkbox">
+              <input id="showEdgesCheckbox" type="checkbox" checked />
+              <span>显示连线</span>
+            </label>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>当前点</h2>
+          <div id="selectedPointCard" class="selected-point empty">还没有选中点。</div>
+          <div class="row">
+            <button id="visibility0Button" type="button">不存在 (0)</button>
+            <button id="visibility1Button" type="button">遮挡 (1)</button>
+            <button id="visibility2Button" type="button">可见 (2)</button>
+          </div>
+          <p class="hint">快捷键：`0 / 1 / 2` 设置可见度，`V` 循环切换。</p>
+        </section>
+
+        <section class="panel panel-grow">
+          <h2>关键点</h2>
+          <div id="pointList" class="point-list"></div>
+        </section>
+
+        <section class="panel">
+          <h2>导出</h2>
+          <div class="row">
+            <button id="exportCurrentButton" type="button">导出当前图</button>
+            <button id="exportAllButton" type="button">导出全部</button>
+          </div>
+          <label class="field">
+            <span>导入已有标注 JSON</span>
+            <input id="annotationInput" type="file" accept=".json,application/json" />
+          </label>
+        </section>
+
+        <section class="panel">
+          <h2>使用说明</h2>
+          <ol class="instructions">
+            <li>载入图片文件夹，选择一张图。</li>
+            <li>按 `top_left -> top_right -> bottom_left -> bottom_right` 点击四角。</li>
+            <li>点完四角后，点击“确认四角”，再生成其余自动点。</li>
+            <li>点击任意点后，用按钮或键盘调整可见度。</li>
+            <li>完成后导出 JSON。</li>
+          </ol>
+          <p class="hint">
+            鼠标滚轮缩放，右键拖拽平移，左键拖动四个手工角点可微调。
+          </p>
+        </section>
+      </aside>
+
+      <main class="workspace">
+        <div class="topbar">
+          <div id="imageTitle" class="image-title">未载入图片</div>
+          <div id="imageMeta" class="image-meta"></div>
+        </div>
+        <div id="canvasWrap" class="canvas-wrap">
+          <canvas id="stageCanvas"></canvas>
+          <div id="emptyState" class="empty-state">
+            先在左侧载入图片文件夹，再开始标注。
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
