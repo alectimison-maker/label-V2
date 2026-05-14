@@ -5,13 +5,15 @@
 ## 现在支持的能力
 
 - 载入本地图片文件夹，逐张浏览
+- 固定使用内置的 2026 MARK 模板
 - 手工按 `top_left -> top_right -> bottom_left -> bottom_right` 标注 MARK 发光灯条的 4 个蓝色角点
 - 四角录入后点击“确认四角”，再自动生成模板中的其余点
 - 基于单应矩阵，把模板中的其余二维物理点自动投影到图片上
 - 为每个点维护 `x / y / visibility`
+- 四角确认后，所有点都可以继续在图像里拖拽微调
 - 可视化关键点、边线、点标签
 - 手工调整任意点的可见度：`0 = 不存在`，`1 = 被遮挡`，`2 = 可见`
-- 导出单张或全部图片的 JSON / TXT
+- 导出单张或全部图片的 JSON / TXT，其中 `TXT` 可直接给 YOLO Pose 训练
 - 导入已有标注 JSON 继续修订
 
 ## 如何打开
@@ -40,10 +42,13 @@ http://127.0.0.1:8765
 ## 推荐流程
 
 1. 打开工具，载入一个图片文件夹。
-2. 在左侧保持默认模板，或者导入你们队本赛季的模板 JSON。
+   载入入口在顶部一行工具栏。
+2. 工具会固定使用当前内置模板，不需要再额外导入模板。
 3. 按顺序点击 MARK 发光灯条的 4 个蓝色角点：`top_left -> top_right -> bottom_left -> bottom_right`。
-4. 点击“确认四角”，生成所有自动点位后，检查并修正可见度。
+4. 点击“确认四角”，生成所有自动点位后，可继续拖动任意点微调，并检查可见度。
+   上一张 / 下一张按钮放在图片区上方，方便调点后直接切图。
 5. 选择导出格式，再导出 `JSON` 或 `TXT`。
+   导出入口也在顶部一行工具栏。
 
 ## 导出格式
 
@@ -63,15 +68,21 @@ http://127.0.0.1:8765
 
 批量导出时，最外层是一个数组。
 
-`TXT` 导出时，每行对应一张图，格式如下：
+`TXT` 导出时，当前图会导出为单个 `*.txt`，全部导出会打包成一个 `zip`，其中每个图片对应一个同名 `txt` 标签文件。内容采用 YOLO Pose 的纯数字格式：
 
 ```text
-image_id top_left(x,y,visibility) top_right(x,y,visibility) bottom_left(x,y,visibility) bottom_right(x,y,visibility) point_01(x,y,visibility) ... point_28(x,y,visibility)
+class cx cy w h x1 y1 v1 x2 y2 v2 ... x32 y32 v32
 ```
 
-其中第一列 `image_id` 作为占位保留，方便后续接 YOLO 训练流程。
+说明：
 
-## 模板格式
+- `class` 固定为 `0`
+- `cx cy w h` 是根据当前有效关键点自动计算出的归一化包围框
+- 后面的关键点按模板顺序导出，坐标都已归一化到 `0 ~ 1`
+- `visibility` 保持 `0 / 1 / 2`
+- 当某个点 `visibility = 0` 时，会导出为 `0 0 0`
+
+## 内置模板结构
 
 模板是一个 JSON 文件，核心字段如下：
 
@@ -103,8 +114,8 @@ image_id top_left(x,y,visibility) top_right(x,y,visibility) bottom_left(x,y,visi
 - 其他点会通过四点求得的单应矩阵自动投影
 - `edges` 只是显示连线，不影响导出
 
-内置示例模板文件在 `./examples/mark-template-draft.json`。
+当前内置模板定义可参考 `./examples/mark-template-draft.json`。
 
 ## 说明
 
-当前内置模板已经切到你给的 2026 MARK 分点版本：4 个手工 anchor 对应 MARK 发光灯条的 4 个蓝色角点，其余 `point_01 ~ point_28` 不再按独立散点保存，而是由共享的 `x / y` 线族交点生成，再通过单应矩阵投到图像里。这样在物理模板里本来平行、共线的灯条边会先被锁住，再做透视投影。这个流程和 OpenCV 的 `findHomography / perspectiveTransform` 是同一套射影几何建模思路，只是当前前端实现保留了本地纯静态可用的版本。后续如果你们队还要继续细调，只需要修改模板 JSON，不需要再改投影代码。
+当前内置模板已经切到你给的 2026 MARK 分点版本：4 个手工 anchor 对应 MARK 发光灯条的 4 个蓝色角点，其余 `point_01 ~ point_28` 不再按独立散点保存，而是由共享的 `x / y` 线族交点生成，再通过单应矩阵投到图像里。这样在物理模板里本来平行、共线的灯条边会先被锁住，再做透视投影。这个流程和 OpenCV 的 `findHomography / perspectiveTransform` 是同一套射影几何建模思路，只是当前前端实现保留了本地纯静态可用的版本。后续如果你们队还要继续细调，只需要修改项目里的内置模板定义，不需要再改投影代码。

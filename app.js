@@ -6,6 +6,8 @@
     JSON: "json",
     TXT: "txt",
   };
+  const YOLO_CLASS_ID = 0;
+  const YOLO_DECIMALS = 6;
   const VISIBILITY_LABELS = {
     0: "不存在",
     1: "遮挡",
@@ -248,13 +250,6 @@
     prevImageButton: document.getElementById("prevImageButton"),
     nextImageButton: document.getElementById("nextImageButton"),
     datasetSummary: document.getElementById("datasetSummary"),
-    templateInput: document.getElementById("templateInput"),
-    templateSummary: document.getElementById("templateSummary"),
-    restoreTemplateButton: document.getElementById("restoreTemplateButton"),
-    toggleTemplateEditorButton: document.getElementById("toggleTemplateEditorButton"),
-    templateEditorWrap: document.getElementById("templateEditorWrap"),
-    templateEditor: document.getElementById("templateEditor"),
-    applyTemplateButton: document.getElementById("applyTemplateButton"),
     anchorProgress: document.getElementById("anchorProgress"),
     confirmAnchorsButton: document.getElementById("confirmAnchorsButton"),
     resetCurrentButton: document.getElementById("resetCurrentButton"),
@@ -284,7 +279,7 @@
   function bootstrap() {
     hydrateFromStorage();
     bindEvents();
-    syncTemplateEditor();
+    syncControlsState();
     render();
   }
 
@@ -295,11 +290,6 @@
     els.imageFolderInput.addEventListener("change", handleImageFolderInput);
     els.prevImageButton.addEventListener("click", () => stepImage(-1));
     els.nextImageButton.addEventListener("click", () => stepImage(1));
-
-    els.templateInput.addEventListener("change", handleTemplateInput);
-    els.restoreTemplateButton.addEventListener("click", restoreDefaultTemplate);
-    els.toggleTemplateEditorButton.addEventListener("click", toggleTemplateEditor);
-    els.applyTemplateButton.addEventListener("click", applyTemplateFromEditor);
 
     els.confirmAnchorsButton.addEventListener("click", toggleAnchorConfirmation);
     els.resetCurrentButton.addEventListener("click", resetCurrentAnnotation);
@@ -422,52 +412,6 @@
     render();
   }
 
-  function handleTemplateInput(event) {
-    const file = event.target.files && event.target.files[0];
-    if (!file) {
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const parsed = JSON.parse(String(reader.result));
-        state.template = normalizeTemplate(upgradeLegacyDraftTemplate(parsed));
-        state.selectedPointId = null;
-        syncTemplateEditor();
-        persistStateSoon();
-        render();
-      } catch (error) {
-        alert("模板 JSON 解析失败：" + error.message);
-      }
-    };
-    reader.readAsText(file, "utf-8");
-    event.target.value = "";
-  }
-
-  function restoreDefaultTemplate() {
-    state.template = normalizeTemplate(defaultTemplate);
-    state.selectedPointId = null;
-    syncTemplateEditor();
-    persistStateSoon();
-    render();
-  }
-
-  function toggleTemplateEditor() {
-    els.templateEditorWrap.classList.toggle("hidden");
-  }
-
-  function applyTemplateFromEditor() {
-    try {
-      const parsed = JSON.parse(els.templateEditor.value);
-      state.template = normalizeTemplate(upgradeLegacyDraftTemplate(parsed));
-      state.selectedPointId = null;
-      persistStateSoon();
-      render();
-    } catch (error) {
-      alert("模板 JSON 解析失败：" + error.message);
-    }
-  }
-
   function handleAnnotationImport(event) {
     const file = event.target.files && event.target.files[0];
     if (!file) {
@@ -530,13 +474,8 @@
     const hit = hitTestPoint(pointer.x, pointer.y);
     if (hit) {
       state.selectedPointId = hit.id;
-      if (hit.isAnchor) {
-        state.drag.mode = "anchor";
-        state.drag.pointId = hit.id;
-      } else {
-        state.drag.mode = null;
-        state.drag.pointId = null;
-      }
+      state.drag.mode = "point";
+      state.drag.pointId = hit.id;
       render();
       return;
     }
@@ -574,10 +513,10 @@
       return;
     }
 
-    if (state.drag.mode === "anchor" && state.drag.pointId) {
+    if (state.drag.mode === "point" && state.drag.pointId) {
       const pointer = getCanvasPointer(event);
       const imagePoint = screenToImage(pointer.x, pointer.y);
-      setAnchorPoint(
+      setPointPosition(
         state.drag.pointId,
         clamp(imagePoint.x, 0, image.naturalWidth),
         clamp(imagePoint.y, 0, image.naturalHeight),
@@ -636,7 +575,7 @@
     const scale = Math.min(wrapWidth / image.naturalWidth, wrapHeight / image.naturalHeight) * 0.96;
     state.view.scale = Math.max(scale, 0.05);
     state.view.offsetX = (wrapWidth - image.naturalWidth * state.view.scale) / 2;
-    state.view.offsetY = (wrapHeight - image.naturalHeight * state.view.scale) / 2;
+    state.view.offsetY = 0;
     state.view.fittedImageId = image.id;
   }
 
@@ -654,6 +593,35 @@
     annotation.visibility[anchorId] = visibility;
   }
 
+  function setPointPosition(pointId, x, y, visibility) {
+    if (state.template.anchorSet.has(pointId)) {
+      setAnchorPoint(pointId, x, y, visibility);
+      return;
+    }
+
+    const image = currentImage();
+    if (!image) {
+      return;
+    }
+
+    const annotation = getAnnotation();
+    const baseProjection = buildProjectedPointMapForAnnotation(annotation, image);
+    const basePoint = baseProjection.pointMap.get(pointId);
+    if (!basePoint) {
+      return;
+    }
+
+    annotation.visibility[pointId] = visibility;
+    const dx = roundNumber(x - basePoint.x, 3);
+    const dy = roundNumber(y - basePoint.y, 3);
+    if (Math.abs(dx) < 0.001 && Math.abs(dy) < 0.001) {
+      delete annotation.pointAdjustments[pointId];
+      return;
+    }
+
+    annotation.pointAdjustments[pointId] = { dx, dy };
+  }
+
   function nextMissingAnchorId() {
     const annotation = getAnnotation();
     return state.template.anchorOrder.find((id) => !annotation.anchors[id]) || null;
@@ -666,6 +634,8 @@
     }
     if (!state.annotations[image.id]) {
       state.annotations[image.id] = createEmptyAnnotation();
+    } else {
+      state.annotations[image.id] = normalizeAnnotation(state.annotations[image.id]);
     }
     return state.annotations[image.id];
   }
@@ -675,7 +645,63 @@
       anchors: {},
       visibility: {},
       confirmed: false,
+      pointAdjustments: {},
     };
+  }
+
+  function normalizeAnnotation(annotation) {
+    const normalized = createEmptyAnnotation();
+    if (!annotation || typeof annotation !== "object") {
+      return normalized;
+    }
+
+    if (annotation.anchors && typeof annotation.anchors === "object") {
+      for (const [id, point] of Object.entries(annotation.anchors)) {
+        if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) {
+          continue;
+        }
+        normalized.anchors[id] = {
+          x: roundNumber(point.x, 3),
+          y: roundNumber(point.y, 3),
+        };
+      }
+    }
+
+    if (annotation.visibility && typeof annotation.visibility === "object") {
+      for (const [id, value] of Object.entries(annotation.visibility)) {
+        if (typeof value !== "number") {
+          continue;
+        }
+        normalized.visibility[id] = clamp(Math.round(value), 0, 2);
+      }
+    }
+
+    const rawAdjustments =
+      annotation.pointAdjustments ||
+      annotation.pointOffsets ||
+      annotation.manualOffsets;
+    if (rawAdjustments && typeof rawAdjustments === "object") {
+      for (const [id, offset] of Object.entries(rawAdjustments)) {
+        if (
+          !offset ||
+          !Number.isFinite(offset.dx) ||
+          !Number.isFinite(offset.dy) ||
+          state.template.anchorSet.has(id)
+        ) {
+          continue;
+        }
+        if (Math.abs(offset.dx) < 0.001 && Math.abs(offset.dy) < 0.001) {
+          continue;
+        }
+        normalized.pointAdjustments[id] = {
+          dx: roundNumber(offset.dx, 3),
+          dy: roundNumber(offset.dy, 3),
+        };
+      }
+    }
+
+    normalized.confirmed = Boolean(annotation.confirmed);
+    return normalized;
   }
 
   function hasAllAnchors(annotation = getAnnotation()) {
@@ -730,7 +756,7 @@
 
   function projectCurrentPoints() {
     const annotation = getAnnotation();
-    const projection = buildProjectedPointMapForAnnotation(annotation, currentImage());
+    const projection = buildDisplayPointMapForAnnotation(annotation, currentImage());
     if (!projection.homography) {
       return {
         homography: null,
@@ -774,6 +800,43 @@
       return getAnchorDisplayPoints(annotation);
     }
     return projectCurrentPoints().points;
+  }
+
+  function buildDisplayPointMapForAnnotation(annotation, image) {
+    const projection = buildProjectedPointMapForAnnotation(annotation, image);
+    return {
+      homography: projection.homography,
+      pointMap: applyPointAdjustments(projection.pointMap, annotation),
+    };
+  }
+
+  function applyPointAdjustments(pointMap, annotation) {
+    if (
+      !annotation ||
+      !annotation.pointAdjustments ||
+      typeof annotation.pointAdjustments !== "object" ||
+      !Object.keys(annotation.pointAdjustments).length
+    ) {
+      return pointMap;
+    }
+
+    const adjustedPointMap = new Map(pointMap);
+    for (const [id, offset] of Object.entries(annotation.pointAdjustments)) {
+      const basePoint = pointMap.get(id);
+      if (
+        !basePoint ||
+        !offset ||
+        !Number.isFinite(offset.dx) ||
+        !Number.isFinite(offset.dy)
+      ) {
+        continue;
+      }
+      adjustedPointMap.set(id, {
+        x: basePoint.x + offset.dx,
+        y: basePoint.y + offset.dy,
+      });
+    }
+    return adjustedPointMap;
   }
 
   function render() {
@@ -879,6 +942,7 @@
   }
 
   function renderPointList(points) {
+    const annotation = getAnnotation();
     const fragment = document.createDocumentFragment();
     if (!points.length) {
       const empty = document.createElement("div");
@@ -903,7 +967,9 @@
       name.textContent = point.label || point.id;
       const meta = document.createElement("div");
       meta.className = "point-item-meta";
-      meta.textContent = `x=${formatNumber(point.x)} y=${formatNumber(point.y)} ${point.anchor ? "手工角点" : "自动投影"}`;
+      meta.textContent =
+        `x=${formatNumber(point.x)} y=${formatNumber(point.y)} ` +
+        describePointSource(annotation, point);
       info.append(name, meta);
 
       const tag = document.createElement("div");
@@ -924,6 +990,7 @@
       return;
     }
 
+    const annotation = getAnnotation();
     els.selectedPointCard.className = "selected-point";
     els.selectedPointCard.innerHTML =
       `<strong>${escapeHtml(point.label || point.id)}</strong><br>` +
@@ -931,7 +998,16 @@
       `x: ${formatNumber(point.x)}<br>` +
       `y: ${formatNumber(point.y)}<br>` +
       `visibility: ${point.visibility} / ${VISIBILITY_LABELS[point.visibility]}<br>` +
-      `${point.anchor ? "类型: 手工角点" : "类型: 自动投影点"}`;
+      `类型: ${escapeHtml(describePointSource(annotation, point))}`;
+  }
+
+  function describePointSource(annotation, point) {
+    if (point.anchor) {
+      return "手工角点";
+    }
+    return annotation.pointAdjustments && annotation.pointAdjustments[point.id]
+      ? "自动投影 + 手动微调"
+      : "自动投影";
   }
 
   function updateSidebarStatus() {
@@ -948,10 +1024,6 @@
     els.datasetSummary.textContent = total
       ? `已载入 ${total} 张图片，已完成四角标注 ${completed} 张。`
       : "还没有载入图片。";
-
-    els.templateSummary.textContent =
-      `${state.template.name} | 单位: ${state.template.units || "mm"} | ` +
-      `${state.template.points.length} 个点，${state.template.edges.length} 条连线。`;
 
     const annotation = getAnnotation();
     const anchorStates = state.template.anchorOrder.map((id, index) => {
@@ -1016,7 +1088,7 @@
     await ensureImageLoaded(image);
     const payload = buildExportRecord(image);
     if (state.exportFormat === EXPORT_FORMATS.TXT) {
-      downloadText(`${safeFileStem(image.name)}.annotation.txt`, buildTxtExportContent([payload]));
+      downloadText(`${safeFileStem(image.name)}.txt`, buildTxtExportContent([payload]));
       return;
     }
     downloadJson(`${safeFileStem(image.name)}.annotation.json`, payload);
@@ -1026,14 +1098,17 @@
     await Promise.all(state.images.map((image) => ensureImageLoaded(image)));
     const payload = state.images.map((image) => buildExportRecord(image));
     if (state.exportFormat === EXPORT_FORMATS.TXT) {
-      downloadText("rm-mark-annotations.txt", buildTxtExportContent(payload));
+      downloadBlob("rm-mark-yolo-labels.zip", buildTxtZipBlob(payload));
       return;
     }
     downloadJson("rm-mark-annotations.json", payload);
   }
 
   function buildExportRecord(image) {
-    const annotation = state.annotations[image.id] || createEmptyAnnotation();
+    const annotation = state.annotations[image.id]
+      ? normalizeAnnotation(state.annotations[image.id])
+      : createEmptyAnnotation();
+    state.annotations[image.id] = annotation;
     const projected = buildProjectedPointsForImage(image.id);
     return {
       id: image.id,
@@ -1044,6 +1119,7 @@
       templateModel:
         state.template.name === defaultTemplate.name ? BUILTIN_TEMPLATE_MODEL_VERSION : undefined,
       complete: isAnnotationConfirmed(annotation),
+      pointAdjustments: serializePointAdjustments(annotation.pointAdjustments),
       points: state.template.points.map((point) => {
         const projectedPoint = projected.get(point.id);
         return {
@@ -1061,27 +1137,125 @@
   }
 
   function buildTxtExportLine(record) {
-    const pointTokens = record.points.map((point) => {
-      const x = formatTxtNumber(point.x);
-      const y = formatTxtNumber(point.y);
-      const visibility = typeof point.visibility === "number" ? point.visibility : 2;
-      return `${point.id}(${x},${y},${visibility})`;
-    });
-    return [record.id, ...pointTokens].join(" ");
+    const bbox = buildYoloBoundingBox(record);
+    const tokens = [
+      String(YOLO_CLASS_ID),
+      formatYoloNumber(bbox.cx),
+      formatYoloNumber(bbox.cy),
+      formatYoloNumber(bbox.width),
+      formatYoloNumber(bbox.height),
+    ];
+
+    for (const point of record.points) {
+      const visibility =
+        typeof point.visibility === "number" ? clamp(Math.round(point.visibility), 0, 2) : 0;
+      if (
+        visibility === 0 ||
+        !Number.isFinite(point.x) ||
+        !Number.isFinite(point.y) ||
+        !Number.isFinite(record.imageWidth) ||
+        !Number.isFinite(record.imageHeight) ||
+        record.imageWidth <= 0 ||
+        record.imageHeight <= 0
+      ) {
+        tokens.push(formatYoloNumber(0), formatYoloNumber(0), "0");
+        continue;
+      }
+
+      tokens.push(
+        formatYoloNumber(normalizeYoloValue(point.x, record.imageWidth)),
+        formatYoloNumber(normalizeYoloValue(point.y, record.imageHeight)),
+        String(visibility)
+      );
+    }
+
+    return tokens.join(" ");
   }
 
-  function formatTxtNumber(value) {
-    if (!Number.isFinite(value)) {
-      return "null";
+  function buildYoloBoundingBox(record) {
+    if (
+      !Number.isFinite(record.imageWidth) ||
+      !Number.isFinite(record.imageHeight) ||
+      record.imageWidth <= 0 ||
+      record.imageHeight <= 0
+    ) {
+      return {
+        cx: 0,
+        cy: 0,
+        width: 0,
+        height: 0,
+      };
     }
-    return String(roundNumber(value, 3));
+
+    const validPoints = record.points.filter(
+      (point) =>
+        Number.isFinite(point.x) &&
+        Number.isFinite(point.y) &&
+        (typeof point.visibility !== "number" || point.visibility > 0)
+    );
+    if (!validPoints.length) {
+      return {
+        cx: 0,
+        cy: 0,
+        width: 0,
+        height: 0,
+      };
+    }
+
+    const xs = validPoints.map((point) => point.x);
+    const ys = validPoints.map((point) => point.y);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+
+    return {
+      cx: normalizeYoloValue((minX + maxX) / 2, record.imageWidth),
+      cy: normalizeYoloValue((minY + maxY) / 2, record.imageHeight),
+      width: normalizeYoloValue(maxX - minX, record.imageWidth),
+      height: normalizeYoloValue(maxY - minY, record.imageHeight),
+    };
+  }
+
+  function normalizeYoloValue(value, size) {
+    if (!Number.isFinite(value) || !Number.isFinite(size) || size <= 0) {
+      return 0;
+    }
+    return clamp(value / size, 0, 1);
+  }
+
+  function formatYoloNumber(value) {
+    if (!Number.isFinite(value)) {
+      return (0).toFixed(YOLO_DECIMALS);
+    }
+    return roundNumber(value, YOLO_DECIMALS).toFixed(YOLO_DECIMALS);
+  }
+
+  function serializePointAdjustments(pointAdjustments) {
+    if (!pointAdjustments || !Object.keys(pointAdjustments).length) {
+      return undefined;
+    }
+
+    const serialized = {};
+    for (const [id, offset] of Object.entries(pointAdjustments)) {
+      if (!offset || !Number.isFinite(offset.dx) || !Number.isFinite(offset.dy)) {
+        continue;
+      }
+      serialized[id] = {
+        dx: roundNumber(offset.dx, 3),
+        dy: roundNumber(offset.dy, 3),
+      };
+    }
+
+    return Object.keys(serialized).length ? serialized : undefined;
   }
 
   function buildProjectedPointsForImage(imageId) {
-    const annotation = state.annotations[imageId];
+    const annotation = state.annotations[imageId] ? normalizeAnnotation(state.annotations[imageId]) : null;
     if (!annotation) {
       return new Map();
     }
+    state.annotations[imageId] = annotation;
 
     if (!isAnnotationConfirmed(annotation)) {
       const partial = new Map();
@@ -1097,7 +1271,7 @@
     }
 
     const image = state.images.find((item) => item.id === imageId) || null;
-    return buildProjectedPointMapForAnnotation(annotation, image).pointMap;
+    return buildDisplayPointMapForAnnotation(annotation, image).pointMap;
   }
 
   function mergeImportedAnnotations(payload) {
@@ -1110,6 +1284,7 @@
         anchors: {},
         visibility: {},
         confirmed: Boolean(record.complete || record.confirmed),
+        pointAdjustments: {},
       };
       for (const point of record.points) {
         if (!point || typeof point.id !== "string") {
@@ -1129,8 +1304,32 @@
       if (shouldMigrateLegacyAnnotationRecord(record)) {
         merged.anchors = migrateBorderFrameAnchorsToVisibleCorners(merged.anchors);
       }
-      state.annotations[record.id] = merged;
+      merged.pointAdjustments = normalizeImportedPointAdjustments(record.pointAdjustments);
+      state.annotations[record.id] = normalizeAnnotation(merged);
     }
+  }
+
+  function normalizeImportedPointAdjustments(pointAdjustments) {
+    if (!pointAdjustments || typeof pointAdjustments !== "object") {
+      return {};
+    }
+
+    const normalized = {};
+    for (const [id, offset] of Object.entries(pointAdjustments)) {
+      if (
+        !offset ||
+        !Number.isFinite(offset.dx) ||
+        !Number.isFinite(offset.dy) ||
+        state.template.anchorSet.has(id)
+      ) {
+        continue;
+      }
+      normalized[id] = {
+        dx: roundNumber(offset.dx, 3),
+        dy: roundNumber(offset.dy, 3),
+      };
+    }
+    return normalized;
   }
 
   function normalizeTemplate(template) {
@@ -1816,6 +2015,9 @@
     const tolerance = 12;
     let closest = null;
     for (const point of projected) {
+      if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) {
+        continue;
+      }
       const canvasPoint = imageToScreen(point.x, point.y);
       const dx = canvasPoint.x - screenX;
       const dy = canvasPoint.y - screenY;
@@ -1872,18 +2074,7 @@
     return point.x >= 0 && point.y >= 0 && point.x <= image.naturalWidth && point.y <= image.naturalHeight;
   }
 
-  function syncTemplateEditor() {
-    els.templateEditor.value = JSON.stringify(
-      {
-        name: state.template.name,
-        units: state.template.units,
-        anchorOrder: state.template.anchorOrder,
-        points: state.template.points,
-        edges: state.template.edges,
-      },
-      null,
-      2
-    );
+  function syncControlsState() {
     els.showLabelsCheckbox.checked = state.showLabels;
     els.showEdgesCheckbox.checked = state.showEdges;
     els.exportFormatSelect.value = state.exportFormat;
@@ -1893,18 +2084,21 @@
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) {
-        syncTemplateEditor();
+        syncControlsState();
         return;
       }
       const saved = JSON.parse(raw);
       const shouldMigrateSavedAnchors = templateRequiresLegacyAnchorMigration(saved.template);
-      if (saved.template) {
-        state.template = normalizeTemplate(upgradeLegacyDraftTemplate(saved.template));
-      }
       if (saved.annotations && typeof saved.annotations === "object") {
-        state.annotations = shouldMigrateSavedAnchors
+        const migratedAnnotations = shouldMigrateSavedAnchors
           ? migrateAnnotationMap(saved.annotations)
           : saved.annotations;
+        state.annotations = Object.fromEntries(
+          Object.entries(migratedAnnotations).map(([imageId, annotation]) => [
+            imageId,
+            normalizeAnnotation(annotation),
+          ])
+        );
       }
       state.showLabels = saved.showLabels !== undefined ? Boolean(saved.showLabels) : true;
       state.showEdges = saved.showEdges !== undefined ? Boolean(saved.showEdges) : true;
@@ -1913,7 +2107,7 @@
     } catch (error) {
       console.warn("Failed to hydrate state", error);
     }
-    syncTemplateEditor();
+    syncControlsState();
   }
 
   function persistStateSoon() {
@@ -1923,13 +2117,6 @@
 
   function persistState() {
     const payload = {
-      template: {
-        name: state.template.name,
-        units: state.template.units,
-        anchorOrder: state.template.anchorOrder,
-        points: state.template.points,
-        edges: state.template.edges,
-      },
       annotations: state.annotations,
       showLabels: state.showLabels,
       showEdges: state.showEdges,
@@ -2004,6 +2191,158 @@
       };
     }
     return migrated;
+  }
+
+  function buildTxtZipBlob(records) {
+    const entries = records.map((record) => ({
+      name: buildYoloLabelPath(record),
+      content: buildTxtExportLine(record) + "\n",
+    }));
+    return createZipBlob(entries);
+  }
+
+  function buildYoloLabelPath(record) {
+    const basePath = (record && (record.id || record.imageName)) || "annotation";
+    const normalizedPath = String(basePath)
+      .replaceAll("\\", "/")
+      .replace(/^\.\//, "")
+      .replace(/\.[^.\/]+$/, ".txt");
+    return `labels/${normalizedPath}`;
+  }
+
+  function createZipBlob(entries) {
+    const encoder = new TextEncoder();
+    const localParts = [];
+    const centralParts = [];
+    let offset = 0;
+
+    for (const entry of entries) {
+      const nameBytes = encoder.encode(entry.name);
+      const dataBytes = encoder.encode(entry.content);
+      const crc32 = computeCrc32(dataBytes);
+      const timestamp = getZipDosTimestamp();
+
+      const localHeader = createZipLocalHeader({
+        nameBytes,
+        dataBytes,
+        crc32,
+        timestamp,
+      });
+      localParts.push(localHeader, nameBytes, dataBytes);
+
+      const centralHeader = createZipCentralHeader({
+        nameBytes,
+        dataBytes,
+        crc32,
+        timestamp,
+        localHeaderOffset: offset,
+      });
+      centralParts.push(centralHeader, nameBytes);
+      offset += localHeader.byteLength + nameBytes.byteLength + dataBytes.byteLength;
+    }
+
+    const centralDirectorySize = centralParts.reduce((sum, part) => sum + part.byteLength, 0);
+    const endRecord = createZipEndRecord(entries.length, centralDirectorySize, offset);
+    return new Blob([...localParts, ...centralParts, endRecord], {
+      type: "application/zip",
+    });
+  }
+
+  function createZipLocalHeader({ nameBytes, dataBytes, crc32, timestamp }) {
+    const header = new ArrayBuffer(30);
+    const view = new DataView(header);
+    view.setUint32(0, 0x04034b50, true);
+    view.setUint16(4, 20, true);
+    view.setUint16(6, 0x0800, true);
+    view.setUint16(8, 0, true);
+    view.setUint16(10, timestamp.time, true);
+    view.setUint16(12, timestamp.date, true);
+    view.setUint32(14, crc32 >>> 0, true);
+    view.setUint32(18, dataBytes.byteLength, true);
+    view.setUint32(22, dataBytes.byteLength, true);
+    view.setUint16(26, nameBytes.byteLength, true);
+    view.setUint16(28, 0, true);
+    return header;
+  }
+
+  function createZipCentralHeader({
+    nameBytes,
+    dataBytes,
+    crc32,
+    timestamp,
+    localHeaderOffset,
+  }) {
+    const header = new ArrayBuffer(46);
+    const view = new DataView(header);
+    view.setUint32(0, 0x02014b50, true);
+    view.setUint16(4, 20, true);
+    view.setUint16(6, 20, true);
+    view.setUint16(8, 0x0800, true);
+    view.setUint16(10, 0, true);
+    view.setUint16(12, timestamp.time, true);
+    view.setUint16(14, timestamp.date, true);
+    view.setUint32(16, crc32 >>> 0, true);
+    view.setUint32(20, dataBytes.byteLength, true);
+    view.setUint32(24, dataBytes.byteLength, true);
+    view.setUint16(28, nameBytes.byteLength, true);
+    view.setUint16(30, 0, true);
+    view.setUint16(32, 0, true);
+    view.setUint16(34, 0, true);
+    view.setUint16(36, 0, true);
+    view.setUint32(38, 0, true);
+    view.setUint32(42, localHeaderOffset, true);
+    return header;
+  }
+
+  function createZipEndRecord(entryCount, centralDirectorySize, centralDirectoryOffset) {
+    const footer = new ArrayBuffer(22);
+    const view = new DataView(footer);
+    view.setUint32(0, 0x06054b50, true);
+    view.setUint16(4, 0, true);
+    view.setUint16(6, 0, true);
+    view.setUint16(8, entryCount, true);
+    view.setUint16(10, entryCount, true);
+    view.setUint32(12, centralDirectorySize, true);
+    view.setUint32(16, centralDirectoryOffset, true);
+    view.setUint16(20, 0, true);
+    return footer;
+  }
+
+  function getZipDosTimestamp() {
+    const now = new Date();
+    const year = clamp(now.getFullYear(), 1980, 2107);
+    return {
+      time:
+        ((now.getHours() & 0x1f) << 11) |
+        ((now.getMinutes() & 0x3f) << 5) |
+        Math.floor(now.getSeconds() / 2),
+      date:
+        (((year - 1980) & 0x7f) << 9) |
+        (((now.getMonth() + 1) & 0x0f) << 5) |
+        (now.getDate() & 0x1f),
+    };
+  }
+
+  const CRC32_TABLE = buildCrc32Table();
+
+  function buildCrc32Table() {
+    const table = new Uint32Array(256);
+    for (let index = 0; index < 256; index += 1) {
+      let value = index;
+      for (let bit = 0; bit < 8; bit += 1) {
+        value = (value & 1) ? (0xedb88320 ^ (value >>> 1)) : (value >>> 1);
+      }
+      table[index] = value >>> 0;
+    }
+    return table;
+  }
+
+  function computeCrc32(bytes) {
+    let crc = 0xffffffff;
+    for (const byte of bytes) {
+      crc = CRC32_TABLE[(crc ^ byte) & 0xff] ^ (crc >>> 8);
+    }
+    return (crc ^ 0xffffffff) >>> 0;
   }
 
   function migrateBorderFrameAnchorsToVisibleCorners(anchors) {
